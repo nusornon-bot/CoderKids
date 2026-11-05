@@ -1,0 +1,2710 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><?= appName ?> - แพลตฟอร์มการเรียนรู้วิทยาการคำนวณและเทคโนโลยี</title>
+  
+  <!-- Fonts: Prompt & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS & Canvas Confetti CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Prompt', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      font-family: 'Prompt', 'Plus Jakarta Sans', system-ui, sans-serif;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .pixel-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 4px;
+      width: 140px;
+      height: 140px;
+      background: #0f172a;
+      padding: 10px;
+      border-radius: 12px;
+      border: 2px solid #334155;
+    }
+    .pixel-led {
+      border-radius: 4px;
+      background-color: #1e293b;
+      transition: all 0.15s ease;
+    }
+    .pixel-led.on {
+      background-color: #ef4444;
+      box-shadow: 0 0 10px #ef4444, 0 0 18px #f87171;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.8; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.03); }
+    }
+    .pulse-glow {
+      animation: pulseGlow 3s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen transition-colors flex flex-col">
+
+  <!-- ==================== HEADER NAVIGATION (IDENTICAL TO REACT APP) ==================== -->
+  <header class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Zone 1: Wordmark & Logo -->
+      <button onclick="switchTab('dashboard')" class="flex items-center gap-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-lg group cursor-pointer">
+        <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">
+          C
+        </div>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-1.5">
+            <span class="text-lg font-bold tracking-tight text-slate-900 dark:text-white whitespace-nowrap">
+              Coder Kids
+            </span>
+            <span class="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold border border-indigo-200/50 dark:border-indigo-800/50">
+              GAS Web App
+            </span>
+          </div>
+          <span class="text-[10px] text-slate-500 dark:text-slate-400 hidden sm:inline">สื่อการเรียนรู้วิทยาการคำนวณ &amp; โค้ดดิ้ง</span>
+        </div>
+      </button>
+
+      <!-- Zone 2: Desktop Categorized Navigation (Clean & Organized) -->
+      <nav class="hidden lg:flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 relative">
+        <!-- 1. หน้าหลัก -->
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold bg-indigo-600 text-white shadow-xs cursor-pointer">
+          <span>🏠</span>
+          <span>หน้าหลัก</span>
+        </button>
+
+        <!-- 2. หมวด: บทเรียนหลัก (Dropdown) -->
+        <div class="relative">
+          <button onclick="toggleGasDropdown('dropdown-modules')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+            <span>📚</span>
+            <span>บทเรียนหลัก</span>
+            <span class="px-1.5 py-0.2 rounded-md bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 text-[10px]">4</span>
+            <span class="text-[10px] text-slate-400">▼</span>
+          </button>
+          <div id="dropdown-modules" class="hidden absolute left-0 mt-2 w-72 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2 z-50">
+            <div class="px-3 py-1.5 border-b border-slate-100 dark:border-slate-800 mb-1 flex items-center justify-between">
+              <span class="text-[11px] font-bold text-slate-400 uppercase">📚 4 บทเรียนหลัก</span>
+              <span class="text-[10px] text-indigo-600 dark:text-indigo-400">สพฐ.</span>
+            </div>
+            <button onclick="switchTab('roadmap'); closeAllGasDropdowns();" class="w-full text-left p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+              <span>🧭</span>
+              <div>
+                <div class="font-bold">แผนที่การเรียนรู้</div>
+                <div class="text-[10px] text-slate-400 font-normal">ติดตามเส้นทาง &amp; ปลดล็อกเหรียญ</div>
+              </div>
+            </button>
+            <button onclick="switchTab('mod1'); closeAllGasDropdowns();" class="w-full text-left p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+              <span>🛡️</span>
+              <div>
+                <div class="font-bold">1. ความปลอดภัยดิจิทัล &amp; PDPA</div>
+                <div class="text-[10px] text-slate-400 font-normal">รหัสผ่านปลอดภัย &amp; สิทธิส่วนบุคคล</div>
+              </div>
+            </button>
+            <button onclick="switchTab('mod2'); closeAllGasDropdowns();" class="w-full text-left p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+              <span>🧩</span>
+              <div>
+                <div class="font-bold">2. คิดเป็นลำดับขั้น</div>
+                <div class="text-[10px] text-slate-400 font-normal">การคิดเชิงคำนวณ &amp; อัลกอริทึม</div>
+              </div>
+            </button>
+            <button onclick="switchTab('mod3'); closeAllGasDropdowns();" class="w-full text-left p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+              <span>💻</span>
+              <div>
+                <div class="font-bold">3. ปฏิบัติการ Scratch &amp; Micro:bit</div>
+                <div class="text-[10px] text-slate-400 font-normal">บล็อกคำสั่ง &amp; บอร์ดจำลอง</div>
+              </div>
+            </button>
+            <button onclick="switchTab('mod4'); closeAllGasDropdowns();" class="w-full text-left p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+              <span>🏆</span>
+              <div>
+                <div class="font-bold">4. แสดงผลงานและสะท้อนคิด</div>
+                <div class="text-[10px] text-slate-400 font-normal">โชว์โครงงาน &amp; ประเมินเพื่อน</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. หมวด: แล็บ & มินิเกม (Dropdown) -->
+        <div class="relative">
+          <button onclick="toggleGasDropdown('dropdown-labs')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+            <span>⚡</span>
+            <span>แล็บ &amp; มินิเกม</span>
+            <span class="px-1.5 py-0.2 rounded-md bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 text-[10px]">4</span>
+            <span class="text-[10px] text-slate-400">▼</span>
+          </button>
+          <div id="dropdown-labs" class="hidden absolute left-0 mt-2 w-72 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2 z-50">
+            <div class="px-3 py-1.5 border-b border-slate-100 dark:border-slate-800 mb-1 flex items-center justify-between">
+              <span class="text-[11px] font-bold text-slate-400 uppercase">⚡ แล็บ &amp; เควสต์</span>
+              <span class="text-[10px] text-purple-600 dark:text-purple-400">Interactive</span>
+            </div>
+            <button onclick="openJuniorAiModal(); closeAllGasDropdowns();" class="w-full text-left p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+              <span>💻</span>
+              <div>
+                <div class="font-bold">Junior Code Playground</div>
+                <div class="text-[10px] text-slate-400 font-normal">เขียนโค้ดบล็อก &amp; ไพธอน</div>
+              </div>
+            </button>
+            <button onclick="openJuniorAiModal(); closeAllGasDropdowns();" class="w-full text-left p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+              <span>🧠</span>
+              <div>
+                <div class="font-bold">Kids AI Lab</div>
+                <div class="text-[10px] text-slate-400 font-normal">ห้องทดลองปัญญาประดิษฐ์</div>
+              </div>
+            </button>
+            <button onclick="openBugHunterModal(); closeAllGasDropdowns();" class="w-full text-left p-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+              <span>🐞</span>
+              <div>
+                <div class="font-bold">ภารกิจล่าบั๊ก (+15 EXP)</div>
+                <div class="text-[10px] text-rose-500 font-normal">แก้บั๊กในโค้ดประจำวัน</div>
+              </div>
+            </button>
+            <button onclick="openUnpluggedModal(); closeAllGasDropdowns();" class="w-full text-left p-2 rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+              <span>📄</span>
+              <div>
+                <div class="font-bold">คลังใบงาน Unplugged</div>
+                <div class="text-[10px] text-emerald-600 font-normal">พิมพ์ใบกิจกรรมขนาด A4</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4. หมวด: ห้องเรียน & วัดผล (Dropdown) -->
+        <div class="relative">
+          <button onclick="toggleGasDropdown('dropdown-system')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+            <span>🏫</span>
+            <span>ห้องเรียน &amp; วัดผล</span>
+            <span class="px-1.5 py-0.2 rounded-md bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 text-[10px]">6</span>
+            <span class="text-[10px] text-slate-400">▼</span>
+          </button>
+          <div id="dropdown-system" class="hidden absolute right-0 lg:left-0 mt-2 w-72 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2 z-50">
+            <div class="px-3 py-1.5 border-b border-slate-100 dark:border-slate-800 mb-1 flex items-center justify-between">
+              <span class="text-[11px] font-bold text-slate-400 uppercase">🏫 ห้องเรียน &amp; วัดผล</span>
+              <span class="text-[10px] text-amber-600 dark:text-amber-400">ระบบ</span>
+            </div>
+            <button onclick="switchTab('classroom'); closeAllGasDropdowns();" class="w-full text-left p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+              <span>🏫</span>
+              <span>ห้องเรียนเสมือน</span>
+            </button>
+            <button onclick="openBuddyModal(); closeAllGasDropdowns();" class="w-full text-left p-2 rounded-xl hover:bg-pink-50 dark:hover:bg-pink-950/40 text-pink-700 dark:text-pink-300 flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+              <span>👥</span>
+              <span>คู่หูเรียนรู้ &amp; ส่งกำลังใจ (Buddy)</span>
+            </button>
+            <button onclick="switchTab('leaderboard'); closeAllGasDropdowns();" class="w-full text-left p-2 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-950/40 text-amber-700 dark:text-amber-400 flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+              <span>👑</span>
+              <span>Leaderboard ทำเนียบผู้นำ</span>
+            </button>
+            <button onclick="switchTab('didYouKnow'); closeAllGasDropdowns();" class="w-full text-left p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+              <span>💡</span>
+              <span>เรื่องน่ารู้ชวนคิด</span>
+            </button>
+            <button onclick="openTeacherReportModal(); closeAllGasDropdowns();" class="w-full text-left p-2 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+              <span>🎓</span>
+              <span>รายงาน ปพ.5 ครู (CSV)</span>
+            </button>
+            <button onclick="openCertificateModal(); closeAllGasDropdowns();" class="w-full text-left p-2 rounded-xl hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+              <span>📜</span>
+              <span>เกียรติบัตรการเรียน</span>
+            </button>
+            <button onclick="switchTab('students'); closeAllGasDropdowns();" class="w-full text-left p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+              <span>👥</span>
+              <span>รายชื่อสมาชิกนักเรียน</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Zone 3: Header Right Actions (Matching React UI) -->
+      <div class="flex items-center gap-2 sm:gap-2.5 shrink-0">
+        <!-- Admin Mode Toggle -->
+        <button 
+          id="admin-mode-btn"
+          onclick="toggleAdminMode()" 
+          class="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition-all bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 cursor-pointer"
+          title="สลับโหมดผู้ดูแลระบบ / โหมดสมาชิก"
+        >
+          <span id="admin-icon">🛡️</span>
+          <span id="admin-text">โหมดสมาชิก</span>
+        </button>
+
+        <!-- AI Tutor Button -->
+        <button 
+          onclick="toggleAiTutorModal()" 
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-bold shadow-xs hover:shadow-md transition-all active:scale-95 cursor-pointer"
+          title="ปรึกษาครูพี่โค้ดดิ้ง (AI Tutor)"
+        >
+          <span>🤖</span>
+          <span class="hidden sm:inline">AI Tutor</span>
+        </button>
+
+        <!-- Google Sheets Direct Link -->
+        <a 
+          href="https://docs.google.com/spreadsheets/d/<?= spreadsheetId ?>/edit" 
+          target="_blank"
+          class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold hover:bg-emerald-100 transition-all shadow-xs"
+          title="เปิดไฟล์ฐานข้อมูล Google Sheets"
+        >
+          <span>📊 Sheets</span>
+        </a>
+
+        <!-- Points Shortcut -->
+        <button 
+          onclick="switchTab('dashboard')"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100/80 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-xs font-semibold transition-colors cursor-pointer"
+          title="แต้มสะสมทั้งหมด"
+        >
+          <span>🪙</span>
+          <span id="points-display" class="font-mono tabular-nums text-sm font-bold text-amber-700 dark:text-amber-400">120</span>
+          <span>แต้ม</span>
+        </button>
+
+        <!-- Student Profile Trigger Pill -->
+        <button 
+          onclick="openProfileModal()" 
+          class="flex items-center gap-1.5 p-1 sm:px-2.5 sm:py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200/80 text-slate-800 dark:text-slate-100 text-xs font-semibold transition-colors border border-slate-200 dark:border-slate-700 cursor-pointer"
+          title="ดูและแก้ไขโปรไฟล์นักเรียน"
+        >
+          <span id="profile-avatar-chip" class="text-lg">🐱</span>
+          <span id="profile-name-chip" class="hidden md:inline truncate max-w-[80px]">ภัทรพล</span>
+          <span class="px-1.5 py-0.5 rounded bg-indigo-600 text-white text-[10px] font-mono font-bold">
+            LV.2
+          </span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button 
+          onclick="toggleAppTheme()" 
+          class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-amber-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700 cursor-pointer"
+          title="สลับโหมดสว่าง/โหมดมืด"
+        >
+          <span id="theme-icon">🌙</span>
+        </button>
+
+        <!-- Mobile Menu Toggle Button -->
+        <button 
+          onclick="toggleGasMobileNav()" 
+          class="lg:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 border border-slate-200 dark:border-slate-700 cursor-pointer"
+          aria-label="เมนู"
+        >
+          <span>☰</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Panel -->
+    <div id="gas-mobile-nav" class="hidden lg:hidden bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 space-y-3">
+      <div class="font-bold text-xs text-indigo-600 dark:text-indigo-400">📚 บทเรียนหลัก</div>
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <button onclick="switchTab('dashboard'); toggleGasMobileNav();" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-left">🏠 หน้าหลัก</button>
+        <button onclick="switchTab('roadmap'); toggleGasMobileNav();" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-left">🧭 แผนที่เรียน</button>
+        <button onclick="switchTab('mod1'); toggleGasMobileNav();" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-left">🛡️ 1. ความปลอดภัย</button>
+        <button onclick="switchTab('mod2'); toggleGasMobileNav();" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-left">🧩 2. คิดเป็นลำดับ</button>
+        <button onclick="switchTab('mod3'); toggleGasMobileNav();" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-left">💻 3. Scratch</button>
+        <button onclick="switchTab('mod4'); toggleGasMobileNav();" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-left">🏆 4. ผลงาน</button>
+      </div>
+      <div class="font-bold text-xs text-purple-600 dark:text-purple-400 pt-1">⚡ แล็บ &amp; มินิเกม</div>
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <button onclick="openJuniorAiModal(); toggleGasMobileNav();" class="p-2 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-700 text-left">💻 Junior Code</button>
+        <button onclick="openJuniorAiModal(); toggleGasMobileNav();" class="p-2 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-700 text-left">🧠 Kids AI Lab</button>
+        <button onclick="openBugHunterModal(); toggleGasMobileNav();" class="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 text-left">🐞 ล่าบั๊ก</button>
+        <button onclick="openUnpluggedModal(); toggleGasMobileNav();" class="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 text-left">📄 คลังใบงาน</button>
+      </div>
+      <div class="font-bold text-xs text-amber-600 dark:text-amber-400 pt-1">🏫 ห้องเรียน &amp; วัดผล</div>
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <button onclick="switchTab('classroom'); toggleGasMobileNav();" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-left">🏫 ห้องเรียน</button>
+        <button onclick="switchTab('leaderboard'); toggleGasMobileNav();" class="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 text-left">👑 Leaderboard</button>
+        <button onclick="switchTab('didYouKnow'); toggleGasMobileNav();" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-left">💡 เรื่องน่ารู้</button>
+        <button onclick="openTeacherReportModal(); toggleGasMobileNav();" class="p-2 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-700 text-left">🎓 ปพ.5 ครู</button>
+        <button onclick="openCertificateModal(); toggleGasMobileNav();" class="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 text-left">📜 เกียรติบัตร</button>
+        <button onclick="switchTab('students'); toggleGasMobileNav();" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-left">👥 นักเรียน</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notification Bar -->
+  <div id="status-banner" class="hidden bg-emerald-50 dark:bg-emerald-950/60 border-b border-emerald-200 dark:border-emerald-800 px-4 py-2 text-xs text-emerald-800 dark:text-emerald-300 text-center font-semibold transition-all">
+    <span id="status-banner-text">แจ้งเตือนระบบ</span>
+  </div>
+
+  <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
+  <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1 space-y-10">
+
+    <!-- ================================================================ -->
+    <!-- TAB 0: DASHBOARD                                                 -->
+    <!-- ================================================================ -->
+    <div id="tab-dashboard" class="space-y-10">
+      
+      <!-- 1. Hero & Welcome Banner (2-Column Grid Matching React App) -->
+      <section class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 text-white p-6 sm:p-10 shadow-xl border border-indigo-800/40">
+        <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          
+          <!-- Left Column (Text & Action Buttons) -->
+          <div class="lg:col-span-7 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2 text-xs font-semibold text-indigo-300">
+                <span class="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-ping"></span>
+                <span>หลักสูตรสื่อการเรียนการสอนวิทยาการคำนวณและเทคโนโลยี (สพฐ. &amp; สสวท.)</span>
+              </div>
+              <button 
+                type="button" 
+                onclick="speakThai('ยินดีต้อนรับสู่ Coder Kids ศูนย์รวมการเรียนรู้โค้ดดิ้ง ปลอดภัย และสร้างสรรค์ด้วย Scratch และ Micro:bit พัฒนาทักษะดิจิทัลแห่งอนาคต ฝึกคิดเป็นลำดับขั้นตอน และทดลองเขียนโค้ดในห้องแล็บจำลอง')"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-indigo-200 text-xs font-semibold border border-white/20 transition-all cursor-pointer"
+                title="ฟังเสียงอ่านบรรยายภาษาไทย"
+              >
+                <span>🔊</span>
+                <span>ฟังเสียงบรรยาย</span>
+              </button>
+            </div>
+
+            <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight text-white" style="text-wrap: balance;">
+              ฝึกทักษะโค้ดดิ้ง ปลอดภัยในโลกดิจิทัล คิดอย่างเป็นระบบด้วย Scratch และ Micro:bit
+            </h1>
+
+            <p class="text-sm sm:text-base text-slate-300 max-w-xl leading-relaxed">
+              พัฒนาทักษะดิจิทัลแห่งอนาคต: เรียนรู้ความปลอดภัยไซเบอร์และกฎหมาย PDPA, ฝึกตรรกะและการคิดเชิงคำนวณ, ลงมือเขียนบล็อกคำสั่งจำลอง และแบ่งปันผลงานเชื่อมโยงฐานข้อมูล Google Sheets แบบเรียลไทม์
+            </p>
+
+            <div class="flex flex-wrap items-center gap-3 pt-2">
+              <button
+                onclick="switchTab('mod1')"
+                class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold transition-all shadow-md active:scale-95 cursor-pointer"
+              >
+                <span>เริ่มเรียนรู้บทเรียนที่ 1</span>
+                <span>&rarr;</span>
+              </button>
+
+              <button
+                onclick="switchTab('mod3')"
+                class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold border border-white/20 transition-all active:scale-95 cursor-pointer"
+              >
+                <span>▶️</span>
+                <span>เข้าสู่ Coding Lab ทันที</span>
+              </button>
+
+              <button
+                type="button"
+                onclick="toggleAiTutorModal()"
+                class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white text-xs sm:text-sm font-semibold border border-white/20 transition-all shadow-md active:scale-95 cursor-pointer"
+              >
+                <span>🤖</span>
+                <span>ปรึกษาครูพี่โค้ด (AI Tutor)</span>
+              </button>
+
+              <button
+                type="button"
+                onclick="triggerConfetti()"
+                class="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-900 text-xs sm:text-sm font-bold shadow-md transition-all active:scale-95 cursor-pointer"
+              >
+                <span>🎉</span>
+                <span>ฉลองความสำเร็จ (Confetti)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Column (Visual Artwork & Creative Coding Illustration) -->
+          <div class="lg:col-span-5 relative">
+            <div class="relative rounded-2xl overflow-hidden border border-white/20 shadow-2xl aspect-video lg:aspect-[4/3] bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 flex items-center justify-center p-4">
+              <!-- Rich SVG Illustration of Classroom Creative Coding -->
+              <svg viewBox="0 0 500 340" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="bgGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.3"/>
+                    <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.1"/>
+                  </linearGradient>
+                  <linearGradient id="screenGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#1e1b4b"/>
+                    <stop offset="100%" stop-color="#0f172a"/>
+                  </linearGradient>
+                </defs>
+                <rect width="500" height="340" rx="16" fill="url(#bgGlow)"/>
+                
+                <!-- Circuit lines in background -->
+                <path d="M 40 50 H 120 V 90 H 200" stroke="#6366f1" stroke-width="2" stroke-dasharray="4 4" fill="none" opacity="0.6"/>
+                <path d="M 460 70 H 380 V 110 H 310" stroke="#06b6d4" stroke-width="2" stroke-dasharray="4 4" fill="none" opacity="0.6"/>
+                <path d="M 50 290 H 150 V 250 H 220" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4 4" fill="none" opacity="0.6"/>
+                <circle cx="200" cy="90" r="4" fill="#6366f1"/>
+                <circle cx="310" cy="110" r="4" fill="#06b6d4"/>
+                <circle cx="220" cy="250" r="4" fill="#f59e0b"/>
+
+                <!-- Main Classroom Table -->
+                <rect x="70" y="210" width="360" height="24" rx="6" fill="#334155"/>
+                <rect x="100" y="234" width="16" height="70" rx="3" fill="#1e293b"/>
+                <rect x="384" y="234" width="16" height="70" rx="3" fill="#1e293b"/>
+
+                <!-- Center Laptop (Coding) -->
+                <rect x="180" y="110" width="140" height="90" rx="8" fill="#475569" stroke="#94a3b8" stroke-width="2"/>
+                <rect x="190" y="120" width="120" height="70" rx="4" fill="url(#screenGrad)"/>
+                <!-- Code lines on laptop -->
+                <rect x="200" y="130" width="55" height="6" rx="3" fill="#f59e0b"/>
+                <rect x="200" y="142" width="75" height="6" rx="3" fill="#38bdf8"/>
+                <rect x="210" y="154" width="60" height="6" rx="3" fill="#a855f7"/>
+                <rect x="210" y="166" width="40" height="6" rx="3" fill="#4ade80"/>
+                <polygon points="160,205 340,205 350,215 150,215" fill="#64748b"/>
+
+                <!-- Scratch Blocks Floating -->
+                <g class="pulse-glow">
+                  <!-- Block 1: When flag clicked -->
+                  <rect x="30" y="80" width="125" height="34" rx="6" fill="#eab308" stroke="#ca8a04" stroke-width="2"/>
+                  <text x="42" y="102" font-size="11" font-weight="bold" fill="#713f12">🚩 when clicked</text>
+                  
+                  <!-- Block 2: Move 10 steps -->
+                  <rect x="45" y="120" width="115" height="30" rx="6" fill="#3b82f6" stroke="#2563eb" stroke-width="2"/>
+                  <text x="56" y="140" font-size="11" font-weight="bold" fill="#ffffff">🐱 move (10) steps</text>
+
+                  <!-- Block 3: Repeat Forever -->
+                  <rect x="45" y="156" width="110" height="30" rx="6" fill="#f97316" stroke="#ea580c" stroke-width="2"/>
+                  <text x="56" y="176" font-size="11" font-weight="bold" fill="#ffffff">🔁 repeat (10)</text>
+                </g>
+
+                <!-- Micro:bit V2 Robot Board (Right Side) -->
+                <g transform="translate(330, 95)">
+                  <!-- Board body -->
+                  <rect x="0" y="0" width="130" height="100" rx="14" fill="#090d16" stroke="#334155" stroke-width="3"/>
+                  <!-- Edge connector -->
+                  <rect x="10" y="86" width="110" height="14" fill="#eab308"/>
+                  <!-- 5x5 LED Display (Heart) -->
+                  <g fill="#ef4444" transform="translate(42, 22)">
+                    <rect x="10" y="0" width="7" height="7" rx="2"/>
+                    <rect x="30" y="0" width="7" height="7" rx="2"/>
+                    <rect x="0" y="10" width="7" height="7" rx="2"/>
+                    <rect x="10" y="10" width="7" height="7" rx="2"/>
+                    <rect x="20" y="10" width="7" height="7" rx="2"/>
+                    <rect x="30" y="10" width="7" height="7" rx="2"/>
+                    <rect x="40" y="10" width="7" height="7" rx="2"/>
+                    <rect x="0" y="20" width="7" height="7" rx="2"/>
+                    <rect x="10" y="20" width="7" height="7" rx="2"/>
+                    <rect x="20" y="20" width="7" height="7" rx="2"/>
+                    <rect x="30" y="20" width="7" height="7" rx="2"/>
+                    <rect x="40" y="20" width="7" height="7" rx="2"/>
+                    <rect x="10" y="30" width="7" height="7" rx="2"/>
+                    <rect x="20" y="30" width="7" height="7" rx="2"/>
+                    <rect x="30" y="30" width="7" height="7" rx="2"/>
+                    <rect x="20" y="40" width="7" height="7" rx="2"/>
+                  </g>
+                  <!-- Button A and B -->
+                  <circle cx="18" cy="45" r="9" fill="#1e293b" stroke="#cbd5e1" stroke-width="1.5"/>
+                  <text x="14" y="49" font-size="10" font-weight="bold" fill="#ffffff">A</text>
+                  <circle cx="112" cy="45" r="9" fill="#1e293b" stroke="#cbd5e1" stroke-width="1.5"/>
+                  <text x="108" y="49" font-size="10" font-weight="bold" fill="#ffffff">B</text>
+                </g>
+
+                <!-- Floating Code Badge (Creative Coding) -->
+                <rect x="155" y="25" width="190" height="34" rx="17" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/>
+                <text x="175" y="47" font-size="13" font-weight="800" fill="#a5b4fc" letter-spacing="1">✨ CREATIVE CODING</text>
+              </svg>
+
+              <!-- Interactive Badge Overlay matching React -->
+              <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent flex flex-col justify-end p-5 pointer-events-none">
+                <span class="text-xs font-semibold text-indigo-300 uppercase tracking-wider">
+                  Interactive Learning
+                </span>
+                <span class="text-sm font-bold text-white">
+                  ลงมือทำจริงผ่านการจำลองเสมือน ไม่ต้องติดตั้งโปรแกรม
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 2. Four Comprehensive Learning Dimensions (เครื่องมือส่งเสริมการเรียนรู้ 4 ด้าน) -->
+      <section class="space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="space-y-0.5">
+            <h2 class="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <span>✨</span>
+              <span>เครื่องมือเสริมการเรียนรู้ 4 มิติ ยกระดับศักยภาพผู้เรียน</span>
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              ครอบคลุมการวัดผล สพฐ., ใบงาน Unplugged, มินิเกมล่าบั๊ก, และห้องทดลองโค้ดดิ้งข้อความ &amp; AI
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Dimension 1: Teacher Assessment Report (ปพ.5) -->
+          <div
+            onclick="openTeacherReportModal()"
+            class="p-5 rounded-3xl bg-gradient-to-br from-purple-50 via-white to-purple-50/40 dark:from-purple-950/40 dark:via-slate-900 dark:to-slate-900 border border-purple-200 dark:border-purple-800/60 shadow-sm hover:shadow-md transition-all cursor-pointer group hover:-translate-y-0.5"
+          >
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-bold text-lg shadow-xs">
+                🎓
+              </div>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300">
+                สพฐ. &amp; สสวท.
+              </span>
+            </div>
+            <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100 mb-1">
+              แบบประเมิน ปพ.5 &amp; CSV
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed mb-3">
+              รายงานคะแนน 5 ตัวชี้วัด, สถิติชั้นเรียน, รูบริก 4 ระดับ และพิมพ์เอกสารราชการ
+            </p>
+            <span class="text-xs font-semibold text-purple-700 dark:text-purple-400 flex items-center gap-1">
+              <span>เปิดดูรายงาน ปพ.5 &rarr;</span>
+            </span>
+          </div>
+
+          <!-- Dimension 2: Unplugged Worksheets (A4 Print) -->
+          <div
+            onclick="openUnpluggedModal()"
+            class="p-5 rounded-3xl bg-gradient-to-br from-emerald-50 via-white to-emerald-50/40 dark:from-emerald-950/40 dark:via-slate-900 dark:to-slate-900 border border-emerald-200 dark:border-emerald-800/60 shadow-sm hover:shadow-md transition-all cursor-pointer group hover:-translate-y-0.5"
+          >
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-xs">
+                📄
+              </div>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
+                พิมพ์ A4 ได้จริง
+              </span>
+            </div>
+            <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100 mb-1">
+              คลังใบงาน Unplugged (4 กิจกรรม)
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed mb-3">
+              ผังงาน Flowchart, ถอดรหัสพิกเซล Binary, เขาวงกตคำสั่ง, และใบสำรวจ PDPA
+            </p>
+            <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+              <span>เลือกและพิมพ์ใบงาน &rarr;</span>
+            </span>
+          </div>
+
+          <!-- Dimension 3: Daily Bug Hunter Challenge -->
+          <div
+            onclick="openBugHunterModal()"
+            class="p-5 rounded-3xl bg-gradient-to-br from-rose-50 via-white to-rose-50/40 dark:from-rose-950/40 dark:via-slate-900 dark:to-slate-900 border border-rose-200 dark:border-rose-800/60 shadow-sm hover:shadow-md transition-all cursor-pointer group hover:-translate-y-0.5"
+          >
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 rounded-2xl bg-rose-600 text-white flex items-center justify-center font-bold text-lg shadow-xs">
+                🐞
+              </div>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300">
+                +15 EXP / Streak
+              </span>
+            </div>
+            <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100 mb-1">
+              ภารกิจล่า Bug ประจำวัน
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed mb-3">
+              มินิเกมค้นหาและแก้ไขข้อผิดพลาดในบล็อก Scratch ฝึกตรรกะดีบั๊กเกอร์
+            </p>
+            <span class="text-xs font-semibold text-rose-700 dark:text-rose-400 flex items-center gap-1">
+              <span>เข้าสู่ภารกิจล่าบั๊ก &rarr;</span>
+            </span>
+          </div>
+
+          <!-- Dimension 4: Junior Code Playground & Kids AI Lab -->
+          <div
+            onclick="openJuniorAiModal()"
+            class="p-5 rounded-3xl bg-gradient-to-br from-indigo-50 via-white to-indigo-50/40 dark:from-indigo-950/40 dark:via-slate-900 dark:to-slate-900 border border-indigo-200 dark:border-indigo-800/60 shadow-sm hover:shadow-md transition-all cursor-pointer group hover:-translate-y-0.5"
+          >
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-xs">
+                💻
+              </div>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
+                Python &amp; AI
+              </span>
+            </div>
+            <h3 class="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100 mb-1">
+              Junior Code &amp; Kids AI Lab
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed mb-3">
+              ฝึกเขียนโค้ด Python, Micro:bit JS พร้อมห้องทดลองเทรนโมเดล AI คัดแยกขยะ
+            </p>
+            <span class="text-xs font-semibold text-indigo-700 dark:text-indigo-400 flex items-center gap-1">
+              <span>เปิดห้องทดลองโค้ดดิ้ง &rarr;</span>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Progress & Learning Metrics Strip (4 Cards Matching React) -->
+      <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <!-- Metric 1 -->
+        <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-2">
+            <span>ความคืบหน้ารวม</span>
+            <span class="text-indigo-600 font-bold">📈</span>
+          </div>
+          <div class="space-y-1.5">
+            <div class="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">75%</div>
+            <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div class="h-full bg-indigo-600 rounded-full transition-all duration-500" style="width: 75%"></div>
+            </div>
+            <div class="text-[11px] text-slate-400">เรียนจบแล้ว 3 จาก 4 โมดูล</div>
+          </div>
+        </div>
+
+        <!-- Metric 2 -->
+        <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-2">
+            <span>คะแนนสะสม</span>
+            <span class="text-amber-500">✨</span>
+          </div>
+          <div class="space-y-1">
+            <div class="text-2xl font-bold text-indigo-700 dark:text-indigo-400 tabular-nums">
+              <span id="stats-points">120</span> <span class="text-xs font-normal text-slate-500 dark:text-slate-400">แต้ม</span>
+            </div>
+            <div class="text-[11px] text-slate-400">ได้จากการทำมินิเกมและแบบทดสอบ</div>
+          </div>
+        </div>
+
+        <!-- Metric 3 -->
+        <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-2">
+            <span>เครื่องมือปฏิบัติการ</span>
+            <span class="text-emerald-600">💻</span>
+          </div>
+          <div class="space-y-1">
+            <div class="text-base font-bold text-slate-900 dark:text-white">Scratch &amp; Micro:bit</div>
+            <div class="text-[11px] text-slate-400">แคนวาส 480x320 &amp; บอร์ด LED 5x5</div>
+          </div>
+        </div>
+
+        <!-- Metric 4 -->
+        <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-2">
+            <span>สถานะเกียรติบัตร</span>
+            <span class="text-purple-600">🏆</span>
+          </div>
+          <div class="space-y-1.5">
+            <button
+              onclick="openCertificateModal()"
+              class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
+            >
+              <span>พร้อมรับเกียรติบัตร</span>
+              <span>&rarr;</span>
+            </button>
+            <div class="text-[11px] text-slate-400">ใบรับรองมาตรฐาน สพฐ. &amp; สสวท.</div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- 3. Today's Learning Goal Checklist Card (Matching React App) -->
+      <section class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 p-1 shadow-lg border border-indigo-800/40">
+        <div class="bg-white dark:bg-slate-900 rounded-[22px] p-5 sm:p-6 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 shadow-inner text-xl">
+                🎯
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                    เป้าหมายการเรียนรู้วันนี้ (Today's Learning Goal)
+                  </h3>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
+                    Checklist
+                  </span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">
+                  ตั้งเป้าหมายภารกิจก่อนเข้าเรียน และเช็คอินความสำเร็จเพื่อรับ +10 แต้มสะสม
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-1">
+                <span>🔥</span>
+                <span>Streak 4 วัน</span>
+              </span>
+              <button
+                type="button"
+                onclick="switchTab('mod4')"
+                class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 dark:text-slate-200 text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>✏️ ไปที่ Daily Journal</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Goal Item -->
+          <div id="today-goal-box" class="p-4 rounded-2xl border transition-all bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 ring-1 ring-emerald-200 dark:ring-emerald-900">
+            <div class="flex items-start gap-3.5">
+              <input 
+                type="checkbox" 
+                id="goal-check" 
+                checked 
+                onchange="toggleGoalComplete(this)" 
+                class="mt-1 w-5 h-5 text-emerald-600 rounded cursor-pointer"
+              >
+              <div class="flex-1 space-y-1.5">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300">
+                    🐱 Scratch Visual Code
+                  </span>
+                  <span id="goal-status-badge" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                    <span>✓</span>
+                    <span>สำเร็จแล้ว! +10 แต้มเข้าสู่โปรไฟล์</span>
+                  </span>
+                </div>
+                <p id="goal-text" class="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  เขียนบล็อก Scratch ให้แมวกระโดดข้ามสิ่งกีดขวาง และเก็บเหรียญทองให้ครบ 5 เหรียญ
+                </p>
+                <div class="text-[11px] text-slate-500 dark:text-slate-400 pt-1">
+                  💡 บันทึกความรู้ที่ได้ลงใน Daily Journal เพื่อส่งข้อมูลลง Google Sheets อัตโนมัติ
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Suggestion Goal Chips -->
+          <div class="space-y-1.5 pt-1">
+            <div class="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              💡 คลิกเลือกเป้าหมายด่วนสำหรับภารกิจถัดไป:
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <button 
+                onclick="setCustomGoal('ทดสอบจำลองบอร์ด Micro:bit แสดงผลไอคอนและวัดอุณหภูมิ', '📟 Micro:bit & IoT')"
+                class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 hover:bg-indigo-50 dark:hover:bg-slate-700 text-left text-xs font-medium text-slate-700 dark:text-slate-200 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <span>📟</span>
+                <span class="truncate">วัดอุณหภูมิห้องด้วย Micro:bit</span>
+              </button>
+              <button 
+                onclick="setCustomGoal('ฝึกแยกแยะข้อมูลส่วนบุคคล PDPA และทดสอบความปลอดภัยรหัสผ่าน', '🛡️ PDPA & Cyber Safety')"
+                class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 hover:bg-indigo-50 dark:hover:bg-slate-700 text-left text-xs font-medium text-slate-700 dark:text-slate-200 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <span>🛡️</span>
+                <span class="truncate">ฝึกแยกแยะข้อมูล PDPA</span>
+              </button>
+              <button 
+                onclick="setCustomGoal('แก้ปัญหาเขาวงกตด้วย 4 เสาหลักการคิดเชิงคำนวณ', '🧩 Computational Thinking')"
+                class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 hover:bg-indigo-50 dark:hover:bg-slate-700 text-left text-xs font-medium text-slate-700 dark:text-slate-200 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <span>🧩</span>
+                <span class="truncate">แก้ปัญหาเขาวงกต 4 เสาหลัก</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 3.5. 7-Day Student Learning Streak Trends Bar Chart (Motivate Consistent Attendance) -->
+      <section class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm p-5 sm:p-7 space-y-6 transition-colors">
+        <!-- Header -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
+          <div class="flex items-start gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-rose-500 text-white flex items-center justify-center shrink-0 shadow-md text-2xl ring-4 ring-amber-100 dark:ring-amber-950/60">
+              🔥
+            </div>
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 flex items-center gap-1 shadow-xs">
+                  <span>🔥</span>
+                  <span>Streak 4 วันต่อเนื่อง!</span>
+                </span>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                  <span>✓</span>
+                  <span>อัตราเข้าเรียน 7 วัน: 86% (6/7 วัน)</span>
+                </span>
+              </div>
+              <h3 class="text-lg sm:text-xl font-black text-slate-900 dark:text-white mt-1.5 flex items-center gap-2">
+                <span>สถิติการเรียนรู้ต่อเนื่อง 7 วันล่าสุด (Learning Streak Trends)</span>
+              </h3>
+              <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                🔥 เรียนต่อเนื่องอีกเพียง <strong class="text-amber-600 dark:text-amber-400 font-bold">3 วัน</strong> เพื่อปลดล็อกเข็มกลัดเกียรติยศ <em>"7-Day Streak Champion"</em>!
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2.5 self-start lg:self-center shrink-0">
+            <button
+              onclick="triggerConfetti(); showStatusBanner('🔥 เช็คอินเข้าเรียนวันนี้สำเร็จ! รักษาสถิติ Streak ต่อเนื่อง (+10 EXP)');"
+              class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white text-xs font-bold shadow-md active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <span>⚡</span>
+              <span>เช็คอินเข้าเรียนวันนี้</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3 Highlight Tiles -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div class="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50">
+            <div class="text-xs text-amber-800 dark:text-amber-300 font-semibold mb-1 flex items-center gap-1">
+              <span>🔥</span>
+              <span>เป้าหมาย Streak ถัดไป</span>
+            </div>
+            <div class="text-2xl font-black text-amber-900 dark:text-amber-200">4 / 7 วัน</div>
+            <div class="w-full h-2 bg-amber-200/60 dark:bg-amber-900/60 rounded-full mt-2 overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-amber-500 to-rose-500 rounded-full" style="width: 57%"></div>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/50">
+            <div class="text-xs text-indigo-800 dark:text-indigo-300 font-semibold mb-1 flex items-center gap-1">
+              <span>⏱️</span>
+              <span>เวลาเรียนสะสม 7 วัน</span>
+            </div>
+            <div class="text-2xl font-black text-indigo-900 dark:text-indigo-200">335 นาที</div>
+            <div class="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold mt-1">เฉลี่ย 48 นาที/วัน (เกินเกณฑ์ 30 นาที)</div>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50">
+            <div class="text-xs text-emerald-800 dark:text-emerald-300 font-semibold mb-1 flex items-center gap-1">
+              <span>🛡️</span>
+              <span>สถานะเช็คอินวันนี้</span>
+            </div>
+            <div class="text-xs font-bold text-emerald-700 dark:text-emerald-300">✅ เช็คอินสำเร็จแล้ว</div>
+            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">รับแต้มสะสม +10 EXP และรักษาสถิติ</div>
+          </div>
+        </div>
+
+        <!-- 7-Day Bar Chart Visualizer -->
+        <div class="space-y-3 p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-slate-800 dark:text-slate-200">📊 กราฟแท่งเวลาเรียนรู้ 7 วันล่าสุด (นาที)</span>
+            <div class="flex items-center gap-3">
+              <span class="flex items-center gap-1 text-[11px]"><span class="w-3 h-3 rounded bg-amber-500 inline-block"></span> วันนี้</span>
+              <span class="flex items-center gap-1 text-[11px]"><span class="w-3 h-3 rounded bg-indigo-600 inline-block"></span> เข้าเรียน</span>
+              <span class="flex items-center gap-1 text-[11px] text-emerald-600 font-semibold"><span class="w-3 h-0.5 border-t border-dashed border-emerald-500 inline-block"></span> เป้าหมาย (30 น.)</span>
+            </div>
+          </div>
+
+          <!-- CSS Bar Chart Grid -->
+          <div class="h-48 flex items-end justify-between gap-2 sm:gap-4 pt-6 px-2 border-b border-slate-200 dark:border-slate-700 relative">
+            <!-- 30-min Target Line -->
+            <div class="absolute left-0 right-0 border-b-2 border-dashed border-emerald-400/80 top-[40%] flex justify-end pr-2 pointer-events-none">
+              <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-white dark:bg-slate-900 px-1 rounded -mt-2">เกณฑ์ขั้นต่ำ 30 นาที</span>
+            </div>
+
+            <!-- Day 1: จันทร์ -->
+            <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end group cursor-pointer">
+              <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">35น.</span>
+              <div class="w-full max-w-[42px] bg-indigo-600/90 rounded-t-lg transition-all group-hover:bg-indigo-700" style="height: 50%;"></div>
+              <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1">จ.</span>
+            </div>
+
+            <!-- Day 2: อังคาร -->
+            <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end group cursor-pointer">
+              <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">45น.</span>
+              <div class="w-full max-w-[42px] bg-indigo-600/90 rounded-t-lg transition-all group-hover:bg-indigo-700" style="height: 65%;"></div>
+              <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1">อ.</span>
+            </div>
+
+            <!-- Day 3: พุธ -->
+            <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end group cursor-pointer">
+              <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">50น.</span>
+              <div class="w-full max-w-[42px] bg-indigo-600/90 rounded-t-lg transition-all group-hover:bg-indigo-700" style="height: 72%;"></div>
+              <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1">พ.</span>
+            </div>
+
+            <!-- Day 4: พฤหัสบดี -->
+            <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end group cursor-pointer">
+              <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">40น.</span>
+              <div class="w-full max-w-[42px] bg-indigo-600/90 rounded-t-lg transition-all group-hover:bg-indigo-700" style="height: 58%;"></div>
+              <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1">พฤ.</span>
+            </div>
+
+            <!-- Day 5: ศุกร์ -->
+            <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end group cursor-pointer">
+              <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">65น.</span>
+              <div class="w-full max-w-[42px] bg-indigo-600/90 rounded-t-lg transition-all group-hover:bg-indigo-700" style="height: 92%;"></div>
+              <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1">ศ.</span>
+            </div>
+
+            <!-- Day 6: เสาร์ -->
+            <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end group cursor-pointer">
+              <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">45น.</span>
+              <div class="w-full max-w-[42px] bg-indigo-600/90 rounded-t-lg transition-all group-hover:bg-indigo-700" style="height: 65%;"></div>
+              <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-1">ส.</span>
+            </div>
+
+            <!-- Day 7: วันนี้ (Today) Highlighted in Amber -->
+            <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end group cursor-pointer">
+              <span class="text-[10px] font-bold text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform">55น. 🔥</span>
+              <div class="w-full max-w-[42px] bg-gradient-to-t from-amber-500 to-orange-400 rounded-t-lg transition-all shadow-md group-hover:brightness-110" style="height: 80%;"></div>
+              <span class="text-[11px] font-bold text-amber-600 dark:text-amber-400 mt-1">วันนี้</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1 text-xs text-slate-500 dark:text-slate-400">
+          <span>💡 เคล็ดลับ: เรียนรู้สม่ำเสมอวันละ 20-30 นาที ช่วยจดจำอัลกอริทึมได้ดีกว่าการเรียนอัดแน่น</span>
+          <button onclick="switchTab('mod4')" class="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
+            เขียนบันทึก Daily Journal &rarr;
+          </button>
+        </div>
+      </section>
+
+      <!-- 4. The 4 Core Module Cards (Matching React App UI) -->
+      <section class="space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white">4 โมดูลหลักสูตรวิทยาการคำนวณ</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">คลิกที่การ์ดเพื่อเข้าสู่บทเรียนและลงมือปฏิบัติจริง</p>
+          </div>
+          <button onclick="switchTab('roadmap')" class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline flex items-center gap-1 cursor-pointer">
+            <span>ดูแผนที่เรียนทั้งหมด (Roadmap)</span>
+            <span>&rarr;</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          
+          <!-- Module 1 Card -->
+          <div onclick="switchTab('mod1')" class="group cursor-pointer p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-indigo-400 hover:shadow-md transition-all flex flex-col justify-between">
+            <div>
+              <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4 text-xl">
+                🛡️
+              </div>
+              <div class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">โมดูลที่ 1</div>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-2">
+                1. ความปลอดภัยดิจิทัล &amp; PDPA
+              </h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                การปกป้องข้อมูลส่วนบุคคล (PDPA), รหัสผ่านปลอดภัย, มารยาทดิจิทัล Netiquette และแบบทดสอบ 5 ข้อ
+              </p>
+            </div>
+            <div class="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+              <span class="text-slate-400">PDPA Lab &amp; Quiz</span>
+              <span class="text-indigo-600 dark:text-indigo-400 font-semibold group-hover:translate-x-1 transition-transform">เข้าสู่บทเรียน &rarr;</span>
+            </div>
+          </div>
+
+          <!-- Module 2 Card -->
+          <div onclick="switchTab('mod2')" class="group cursor-pointer p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-indigo-400 hover:shadow-md transition-all flex flex-col justify-between">
+            <div>
+              <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4 text-xl">
+                🧩
+              </div>
+              <div class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">โมดูลที่ 2</div>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-2">
+                2. การคิดเชิงคำนวณ &amp; อัลกอริทึม
+              </h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                4 เสาหลัก CT, การออกแบบขั้นตอนวิธี Flowchart, โครงสร้างวนซ้ำ และมินิเกมเขาวงกตเก็บดาว
+              </p>
+            </div>
+            <div class="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+              <span class="text-slate-400">4 Pillars &amp; Maze</span>
+              <span class="text-indigo-600 dark:text-indigo-400 font-semibold group-hover:translate-x-1 transition-transform">เข้าสู่บทเรียน &rarr;</span>
+            </div>
+          </div>
+
+          <!-- Module 3 Card -->
+          <div onclick="switchTab('mod3')" class="group cursor-pointer p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-indigo-400 hover:shadow-md transition-all flex flex-col justify-between">
+            <div>
+              <div class="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center mb-4 text-xl">
+                💻
+              </div>
+              <div class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">โมดูลที่ 3</div>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-2">
+                3. ปฏิบัติการ Scratch &amp; Micro:bit
+              </h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                ห้องทดลองแคนวาส Scratch บังคับแมวกระโดดเก็บเหรียญ และตัวจำลองบอร์ด Micro:bit V2 LED 5x5
+              </p>
+            </div>
+            <div class="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+              <span class="text-slate-400">Canvas &amp; Simulator</span>
+              <span class="text-indigo-600 dark:text-indigo-400 font-semibold group-hover:translate-x-1 transition-transform">เข้าสู่บทเรียน &rarr;</span>
+            </div>
+          </div>
+
+          <!-- Module 4 Card -->
+          <div onclick="switchTab('mod4')" class="group cursor-pointer p-5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-indigo-400 hover:shadow-md transition-all flex flex-col justify-between">
+            <div>
+              <div class="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4 text-xl">
+                🏆
+              </div>
+              <div class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">โมดูลที่ 4</div>
+              <h3 class="text-base font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-2">
+                4. แสดงผลงาน &amp; บันทึกสะท้อนคิด
+              </h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Showcase Gallery แลกเปลี่ยนโครงงาน, Daily Journal บันทึกตรงสู่ Google Sheets และรับเกียรติบัตร
+              </p>
+            </div>
+            <div class="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+              <span class="text-slate-400">Daily Journal &amp; Cert</span>
+              <span class="text-indigo-600 dark:text-indigo-400 font-semibold group-hover:translate-x-1 transition-transform">เข้าสู่บทเรียน &rarr;</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 5. Skills Radar / Competency Overview (Matching React Visualizations) -->
+      <section class="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <span>📊</span>
+              <span>สมรรถนะการเรียนรู้รายบุคคล (Competency Radar)</span>
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+              วัดระดับทักษะ 5 ด้านตามตัวชี้วัดกลุ่มสาระวิทยาศาสตร์และเทคโนโลยี (สพฐ.)
+            </p>
+          </div>
+          <span class="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 self-start sm:self-auto">
+            ระดับความเชี่ยวชาญ: ดีเยี่ยม (Level 2)
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+          <!-- Interactive SVG Radar Chart -->
+          <div class="md:col-span-5 flex justify-center">
+            <svg viewBox="0 0 300 300" class="w-64 h-64">
+              <!-- Grid polygons -->
+              <polygon points="150,30 264,112 220,248 80,248 36,112" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+              <polygon points="150,65 231,124 200,221 100,221 69,124" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+              <polygon points="150,100 198,136 180,194 120,194 102,136" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+              <!-- Axis lines -->
+              <line x1="150" y1="150" x2="150" y2="30" stroke="#cbd5e1" stroke-width="1"/>
+              <line x1="150" y1="150" x2="264" y2="112" stroke="#cbd5e1" stroke-width="1"/>
+              <line x1="150" y1="150" x2="220" y2="248" stroke="#cbd5e1" stroke-width="1"/>
+              <line x1="150" y1="150" x2="80" y2="248" stroke="#cbd5e1" stroke-width="1"/>
+              <line x1="150" y1="150" x2="36" y2="112" stroke="#cbd5e1" stroke-width="1"/>
+              <!-- Data Polygon: (PDPA 85%, CT 90%, Scratch 75%, Microbit 70%, Ethics 80%) -->
+              <polygon points="150,48 247,118 202,223 98,220 54,122" fill="#6366f1" fill-opacity="0.35" stroke="#4f46e5" stroke-width="2.5"/>
+              <circle cx="150" cy="48" r="4" fill="#4f46e5"/>
+              <circle cx="247" cy="118" r="4" fill="#4f46e5"/>
+              <circle cx="202" cy="223" r="4" fill="#4f46e5"/>
+              <circle cx="98" cy="220" r="4" fill="#4f46e5"/>
+              <circle cx="54" cy="122" r="4" fill="#4f46e5"/>
+              <!-- Labels -->
+              <text x="150" y="20" font-size="10" font-weight="bold" text-anchor="middle" fill="#4f46e5">PDPA (85%)</text>
+              <text x="270" y="115" font-size="10" font-weight="bold" fill="#0284c7">CT (90%)</text>
+              <text x="225" y="265" font-size="10" font-weight="bold" fill="#f59e0b">Scratch (75%)</text>
+              <text x="75" y="265" font-size="10" font-weight="bold" fill="#10b981">Micro:bit (70%)</text>
+              <text x="5" y="115" font-size="10" font-weight="bold" fill="#8b5cf6">Showcase (80%)</text>
+            </svg>
+          </div>
+
+          <!-- Skill Progress Bars on the Right -->
+          <div class="md:col-span-7 space-y-3 text-xs">
+            <div>
+              <div class="flex justify-between font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <span>🛡️ ความปลอดภัยดิจิทัลและการปกป้องข้อมูล (PDPA)</span>
+                <span class="text-indigo-600 dark:text-indigo-400 font-mono">85%</span>
+              </div>
+              <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-indigo-600 rounded-full" style="width: 85%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <span>🧩 การคิดเชิงคำนวณและขั้นตอนวิธี (Computational Thinking)</span>
+                <span class="text-sky-600 dark:text-sky-400 font-mono">90%</span>
+              </div>
+              <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-sky-500 rounded-full" style="width: 90%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <span>🐱 การเขียนโปรแกรมบล็อกคำสั่ง (Scratch Visual Coding)</span>
+                <span class="text-amber-600 dark:text-amber-400 font-mono">75%</span>
+              </div>
+              <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-amber-500 rounded-full" style="width: 75%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <span>📟 การประยุกต์ใช้อุปกรณ์ฮาร์ดแวร์จำลอง (Micro:bit &amp; IoT)</span>
+                <span class="text-emerald-600 dark:text-emerald-400 font-mono">70%</span>
+              </div>
+              <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-emerald-500 rounded-full" style="width: 70%"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex justify-between font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <span>🏆 โครงงานสร้างสรรค์และการสะท้อนคิด (Creative Showcase)</span>
+                <span class="text-purple-600 dark:text-purple-400 font-mono">80%</span>
+              </div>
+              <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-purple-500 rounded-full" style="width: 80%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. Virtual Classroom Notice & Google Meet Card -->
+      <section class="p-6 rounded-3xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-indigo-950/40 border border-blue-200 dark:border-indigo-900 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 text-xs font-semibold">
+            <span>🏫 ห้องเรียนเสมือนจริง (Virtual Classroom)</span>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">
+            ห้องเรียนวิทยาการคำนวณและโค้ดดิ้ง ป.5 โรงเรียนอนุบาลนราธิวาส
+          </h3>
+          <p class="text-xs text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
+            📢 ประกาศประจำสัปดาห์: ให้นักเรียนทุกคนฝึกทำภารกิจ Scratch จำลองเก็บเหรียญ และบันทึก Daily Journal ประจำวัน ข้อมูลจะถูกบันทึกส่งตรงสู่ Google Sheets ของโรงเรียนโดยอัตโนมัติ
+          </p>
+        </div>
+        <div class="flex flex-col sm:flex-row items-center gap-3 shrink-0">
+          <a 
+            href="https://meet.google.com" 
+            target="_blank"
+            class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <span>📹 เข้าห้องเรียน Google Meet</span>
+          </a>
+          <button 
+            onclick="switchTab('students')"
+            class="px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-100 transition-all cursor-pointer"
+          >
+            <span>👥 รายชื่อเพื่อนร่วมห้อง</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 7. Did You Know Section (เรื่องน่ารู้ชวนคิด) -->
+      <section class="space-y-4">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">💡</span>
+          <h3 class="font-bold text-slate-900 dark:text-white">เรื่องน่ารู้ชวนคิด (Did You Know?)</h3>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">ประวัติศาสตร์คอมพิวเตอร์</span>
+            <h4 class="text-sm font-bold text-slate-900 dark:text-white">ทำไมคำว่า 'Bug' ถึงแปลว่าข้อผิดพลาด?</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              ในปี 1947 แมลงมอธ (Moth) ตัวจริงได้บินเข้าไปติดในแผงวงจรคอมพิวเตอร์ Mark II ทำให้เครื่องหยุดทำงาน เมื่อดึงแมลงออกจึงเรียกว่า "Debugging"!
+            </p>
+          </div>
+          <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">ความปลอดภัยไซเบอร์</span>
+            <h4 class="text-sm font-bold text-slate-900 dark:text-white">รหัสผ่าน 8 ตัว vs 12 ตัว ต่างกันแค่ไหน?</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              รหัสผ่านตัวเลข 8 ตัวสามารถถูกเจาะได้ในเวลาไม่ถึง 1 วินาที แต่หากเพิ่มเป็น 12 ตัวอักษรที่มีตัวพิมพ์ใหญ่และสัญลักษณ์ จะต้องใช้เวลาถอดรหัสมากกว่า 34,000 ปี!
+            </p>
+          </div>
+          <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300">ฮาร์ดแวร์ Micro:bit</span>
+            <h4 class="text-sm font-bold text-slate-900 dark:text-white">Micro:bit เคยถูกส่งขึ้นไปบนอวกาศจริงหรือ?</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              ใช่แล้ว! บอร์ด Micro:bit เคยถูกส่งขึ้นสู่อวกาศบนสถานีอวกาศนานาชาติ (ISS) เพื่อทำการทดลองวัดอุณหภูมิและสนามแม่เหล็กโลกโดยนักบินอวกาศ ESA
+            </p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- TAB 1: ROADMAP (LEARNING PATH MAP)                               -->
+    <!-- ================================================================ -->
+    <div id="tab-roadmap" class="hidden space-y-8">
+      <div class="p-6 rounded-3xl bg-gradient-to-r from-indigo-900 to-purple-900 text-white space-y-2">
+        <h2 class="text-2xl font-black">🗺️ แผนที่การผจญภัยสู่ยอดนักเขียนโค้ด (Learning Path Map)</h2>
+        <p class="text-sm text-indigo-200">12 ขั้นตอนการเรียนรู้ผ่าน 4 ด่านสำคัญ จากผู้ใช้ดิจิทัลปลอดภัยสู่ยอดนักประดิษฐ์ซอฟต์แวร์</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Zone 1 -->
+        <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900 space-y-4">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">🛡️</span>
+            <div>
+              <div class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">โซนที่ 1</div>
+              <div class="font-bold text-slate-900 dark:text-white">เกราะป้องกันดิจิทัล</div>
+            </div>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 font-semibold flex items-center justify-between">
+              <span>1. ทำความรู้จักข้อมูลส่วนบุคคล PDPA</span>
+              <span>✓</span>
+            </div>
+            <div class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 font-semibold flex items-center justify-between">
+              <span>2. สร้างรหัสผ่านที่แข็งแกร่ง</span>
+              <span>✓</span>
+            </div>
+            <div class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 font-semibold flex items-center justify-between">
+              <span>3. มารยาทการสื่อสาร Netiquette</span>
+              <span>✓</span>
+            </div>
+          </div>
+          <button onclick="switchTab('mod1')" class="w-full py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 cursor-pointer">เข้าสู่โซนนี้</button>
+        </div>
+
+        <!-- Zone 2 -->
+        <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900 space-y-4">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">🧩</span>
+            <div>
+              <div class="text-[11px] font-bold text-amber-600 dark:text-amber-400">โซนที่ 2</div>
+              <div class="font-bold text-slate-900 dark:text-white">เขาวงกตตรรกะ CT</div>
+            </div>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 font-semibold flex items-center justify-between">
+              <span>4. 4 เสาหลักการคิดเชิงคำนวณ</span>
+              <span>✓</span>
+            </div>
+            <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 font-semibold flex items-center justify-between">
+              <span>5. การออกแบบผังงาน Flowchart</span>
+              <span>✓</span>
+            </div>
+            <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 font-semibold flex items-center justify-between">
+              <span>6. มินิเกมแก้ปัญหาเขาวงกต</span>
+              <span>✓</span>
+            </div>
+          </div>
+          <button onclick="switchTab('mod2')" class="w-full py-2 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 cursor-pointer">เข้าสู่โซนนี้</button>
+        </div>
+
+        <!-- Zone 3 -->
+        <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-sky-200 dark:border-sky-900 space-y-4">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">💻</span>
+            <div>
+              <div class="text-[11px] font-bold text-sky-600 dark:text-sky-400">โซนที่ 3</div>
+              <div class="font-bold text-slate-900 dark:text-white">ห้องทดลอง Scratch &amp; IoT</div>
+            </div>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-sky-900 dark:text-sky-200 font-semibold flex items-center justify-between">
+              <span>7. พื้นฐานบล็อกคำสั่ง Scratch</span>
+              <span>✓</span>
+            </div>
+            <div class="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-sky-900 dark:text-sky-200 font-semibold flex items-center justify-between">
+              <span>8. สร้างเกมแคนวาสเก็บเหรียญ</span>
+              <span class="text-amber-500 font-bold">กำลังทำ</span>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-between">
+              <span>9. การสั่งงานบอร์ด Micro:bit 5x5</span>
+              <span>🔒</span>
+            </div>
+          </div>
+          <button onclick="switchTab('mod3')" class="w-full py-2 rounded-xl bg-sky-600 text-white text-xs font-bold hover:bg-sky-700 cursor-pointer">เข้าสู่โซนนี้</button>
+        </div>
+
+        <!-- Zone 4 -->
+        <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-900 space-y-4">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">🏆</span>
+            <div>
+              <div class="text-[11px] font-bold text-purple-600 dark:text-purple-400">โซนที่ 4</div>
+              <div class="font-bold text-slate-900 dark:text-white">โครงงาน &amp; รับเกียรติบัตร</div>
+            </div>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-between">
+              <span>10. ส่งผลงานเข้าสู่ Showcase</span>
+              <span>🔒</span>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-between">
+              <span>11. บันทึกสะท้อนคิด Daily Journal</span>
+              <span>✓</span>
+            </div>
+            <div class="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200 font-bold flex items-center justify-between">
+              <span>12. รับเกียรติบัตร สพฐ. &amp; สสวท.</span>
+              <span>พร้อมรับ</span>
+            </div>
+          </div>
+          <button onclick="switchTab('mod4')" class="w-full py-2 rounded-xl bg-purple-600 text-white text-xs font-bold hover:bg-purple-700 cursor-pointer">เข้าสู่โซนนี้</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- TAB 2: MODULE 1 (SAFETY & PDPA)                                  -->
+    <!-- ================================================================ -->
+    <div id="tab-mod1" class="hidden space-y-8">
+      <div class="p-6 rounded-3xl bg-gradient-to-r from-emerald-800 to-teal-900 text-white space-y-2">
+        <span class="px-3 py-1 rounded-full bg-emerald-500/30 text-emerald-200 text-xs font-bold">โมดูลที่ 1</span>
+        <h2 class="text-2xl font-bold">🛡️ ความปลอดภัยดิจิทัลและการปกป้องข้อมูลส่วนบุคคล (PDPA)</h2>
+        <p class="text-sm text-emerald-100">เรียนรู้การจำแนกข้อมูลทั่วไป vs ข้อมูลอ่อนไหว, ทดสอบรหัสผ่าน และทำแบบทดสอบเพื่อสะสมแต้ม</p>
+      </div>
+
+      <!-- PDPA Sorting Lab -->
+      <section class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <span>🏷️</span>
+          <span>ห้องปฏิบัติการแยกแยะข้อมูลส่วนบุคคลตาม พ.ร.บ. PDPA</span>
+        </h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400">คลิกที่ปุ่มเพื่อจำแนกประเภทข้อมูลว่า "แชร์ได้ทั่วไป" หรือ "ข้อมูลอ่อนไหวต้องระวัง":</p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="pdpa-cards">
+          <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 space-y-2">
+            <div class="font-bold text-sm text-slate-800 dark:text-slate-200">🏥 ประวัติการรักษาโรคประจำตัว</div>
+            <div class="flex gap-2">
+              <button onclick="checkPdpa(this, false)" class="flex-1 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 text-xs font-semibold cursor-pointer">ข้อมูลทั่วไป</button>
+              <button onclick="checkPdpa(this, true)" class="flex-1 py-1.5 rounded-lg bg-rose-100 dark:bg-rose-950 text-rose-700 text-xs font-semibold cursor-pointer">ข้อมูลอ่อนไหว ⚠️</button>
+            </div>
+            <div class="result-msg text-[11px] font-bold hidden"></div>
+          </div>
+
+          <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 space-y-2">
+            <div class="font-bold text-sm text-slate-800 dark:text-slate-200">🆔 หมายเลขบัตรประชาชน 13 หลัก</div>
+            <div class="flex gap-2">
+              <button onclick="checkPdpa(this, false)" class="flex-1 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 text-xs font-semibold cursor-pointer">ข้อมูลทั่วไป</button>
+              <button onclick="checkPdpa(this, true)" class="flex-1 py-1.5 rounded-lg bg-rose-100 dark:bg-rose-950 text-rose-700 text-xs font-semibold cursor-pointer">ข้อมูลอ่อนไหว ⚠️</button>
+            </div>
+            <div class="result-msg text-[11px] font-bold hidden"></div>
+          </div>
+
+          <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 space-y-2">
+            <div class="font-bold text-sm text-slate-800 dark:text-slate-200">🎨 สีและวิชาที่ชอบ</div>
+            <div class="flex gap-2">
+              <button onclick="checkPdpa(this, true, true)" class="flex-1 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 text-xs font-semibold cursor-pointer">ข้อมูลทั่วไป</button>
+              <button onclick="checkPdpa(this, false, true)" class="flex-1 py-1.5 rounded-lg bg-rose-100 dark:bg-rose-950 text-rose-700 text-xs font-semibold cursor-pointer">ข้อมูลอ่อนไหว ⚠️</button>
+            </div>
+            <div class="result-msg text-[11px] font-bold hidden"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Password Lab -->
+      <section class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <span>🔑</span>
+          <span>เครื่องมือทดสอบความแข็งแกร่งของรหัสผ่าน (Password Strength Checker)</span>
+        </h3>
+        <div class="max-w-xl space-y-3">
+          <input 
+            type="text" 
+            id="pwd-input" 
+            oninput="checkPasswordStrength(this.value)"
+            placeholder="พิมพ์รหัสผ่านเพื่อทดสอบ (เช่น CoderKids@2026)" 
+            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm"
+          >
+          <div class="space-y-1">
+            <div class="flex justify-between text-xs font-semibold">
+              <span id="pwd-strength-label" class="text-slate-500">พิมพ์รหัสผ่าน...</span>
+              <span id="pwd-strength-score" class="font-mono">0 / 4</span>
+            </div>
+            <div class="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div id="pwd-bar" class="h-full bg-slate-400 transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- TAB 3: MODULE 2 (COMPUTATIONAL THINKING)                          -->
+    <!-- ================================================================ -->
+    <div id="tab-mod2" class="hidden space-y-8">
+      <div class="p-6 rounded-3xl bg-gradient-to-r from-amber-700 to-orange-900 text-white space-y-2">
+        <span class="px-3 py-1 rounded-full bg-amber-500/30 text-amber-200 text-xs font-bold">โมดูลที่ 2</span>
+        <h2 class="text-2xl font-bold">🧩 การคิดเชิงคำนวณและอัลกอริทึม (Computational Thinking)</h2>
+        <p class="text-sm text-amber-100">4 เสาหลักการคิดแก้ปัญหา ผังงาน และเกมไขปริศนาเขาวงกตสั่งตัวละครเดินเก็บดาว</p>
+      </div>
+
+      <!-- Maze Algorithm Game -->
+      <section class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <span>🎮</span>
+              <span>มินิเกมเขาวงกตอัลกอริทึม (Algorithm Maze Game)</span>
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">เรียงคำสั่งให้หุ่นยนต์ 🤖 เดินไปเก็บดาว ⭐ ให้สำเร็จ:</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="addMazeCmd('FORWARD')" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 cursor-pointer">⬆️ เดินหน้า</button>
+            <button onclick="addMazeCmd('LEFT')" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 cursor-pointer">↪️ หมุนซ้าย</button>
+            <button onclick="addMazeCmd('RIGHT')" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 cursor-pointer">↩️ หมุนขวา</button>
+            <button onclick="resetMaze()" class="px-3 py-1.5 rounded-xl bg-rose-100 text-rose-700 text-xs font-bold hover:bg-rose-200 cursor-pointer">ล้าง</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+          <div class="p-4 rounded-xl bg-slate-900 text-white flex justify-center">
+            <div id="maze-board" class="grid grid-cols-4 gap-2 w-64 h-64 bg-slate-800 p-3 rounded-xl border-2 border-slate-700"></div>
+          </div>
+          <div class="space-y-3">
+            <div class="font-bold text-xs text-slate-700 dark:text-slate-300">คิวคำสั่งอัลกอริทึม (Command Sequence):</div>
+            <div id="maze-cmds" class="min-h-12 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 flex flex-wrap gap-2 text-xs font-mono font-bold">
+              <span class="text-slate-400">ยังไม่มีคำสั่ง (กดปุ่มด้านบน)</span>
+            </div>
+            <button onclick="runMaze()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all cursor-pointer">
+              ▶️ ประมวลผลคำสั่ง (Execute Algorithm)
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- TAB 4: MODULE 3 (SCRATCH & MICRO:BIT SIMULATOR)                  -->
+    <!-- ================================================================ -->
+    <div id="tab-mod3" class="hidden space-y-8">
+      <div class="p-6 rounded-3xl bg-gradient-to-r from-sky-800 to-indigo-900 text-white space-y-2">
+        <span class="px-3 py-1 rounded-full bg-sky-500/30 text-sky-200 text-xs font-bold">โมดูลที่ 3</span>
+        <h2 class="text-2xl font-bold">💻 ปฏิบัติการจำลอง Scratch Visual Code &amp; Micro:bit Simulator</h2>
+        <p class="text-sm text-sky-100">ทดลองเล่นเกมแคนวาสแมวกระโดดเก็บเหรียญ และจำลองการทำงานของบอร์ด Micro:bit V2 LED 5x5</p>
+      </div>
+
+      <!-- Scratch Canvas Section -->
+      <section class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <span>🐱</span>
+              <span>Scratch 2D Interactive Canvas (แคนวาส 480x280)</span>
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">กดปุ่ม Space หรือคลิกปุ่มกระโดด เพื่อหลบสิ่งกีดขวางและเก็บเหรียญทอง:</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-amber-500 font-mono">เหรียญ: <span id="scratch-score">0</span></span>
+            <button onclick="startScratchGame()" class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 cursor-pointer">▶️ รันโค้ด Scratch</button>
+            <button onclick="scratchJump()" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 cursor-pointer">⬆️ กระโดด (Space)</button>
+          </div>
+        </div>
+        <div class="flex justify-center bg-slate-900 rounded-2xl p-2 border-2 border-slate-700 overflow-hidden">
+          <canvas id="scratch-canvas" width="480" height="260" class="rounded-xl bg-sky-100 max-w-full"></canvas>
+        </div>
+      </section>
+
+      <!-- Micro:bit V2 Board Simulator -->
+      <section class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <span>📟</span>
+          <span>Micro:bit V2 LED Matrix Simulator (บอร์ดจำลอง 5x5)</span>
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+          <div class="flex flex-col items-center gap-3">
+            <div class="p-6 rounded-3xl bg-slate-950 border-4 border-slate-800 shadow-2xl flex flex-col items-center">
+              <div class="pixel-grid" id="micro-grid"></div>
+              <div class="flex justify-between w-full mt-4 px-2">
+                <button onclick="microButton('A')" class="w-12 h-12 rounded-full bg-slate-800 border-2 border-slate-600 text-white font-bold hover:bg-slate-700 active:scale-95 cursor-pointer">A</button>
+                <button onclick="microButton('AB')" class="px-3 py-1 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-[10px] font-bold hover:bg-slate-700 cursor-pointer self-center">A+B</button>
+                <button onclick="microButton('B')" class="w-12 h-12 rounded-full bg-slate-800 border-2 border-slate-600 text-white font-bold hover:bg-slate-700 active:scale-95 cursor-pointer">B</button>
+              </div>
+            </div>
+            <div class="text-xs text-slate-500">คลิกที่ปุ่ม A หรือ B เพื่อเปลี่ยนรูปบนหน้าจอ LED</div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2">
+              <div class="font-bold text-xs text-slate-700 dark:text-slate-200">🌡️ เซนเซอร์วัดอุณหภูมิห้อง (Temperature Sensor):</div>
+              <input type="range" min="15" max="45" value="28" oninput="setTemp(this.value)" class="w-full">
+              <div class="flex justify-between text-xs font-mono font-bold">
+                <span>15 &deg;C</span>
+                <span id="m-temp" class="text-rose-600 dark:text-rose-400 text-base">28 &deg;C</span>
+                <span>45 &deg;C</span>
+              </div>
+            </div>
+            <button onclick="syncSensorToGas()" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer">
+              📊 ส่งค่าอุณหภูมิเซนเซอร์บันทึกลง Google Sheets
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- TAB 5: MODULE 4 (SHOWCASE & DAILY JOURNAL)                        -->
+    <!-- ================================================================ -->
+    <div id="tab-mod4" class="hidden space-y-8">
+      <div class="p-6 rounded-3xl bg-gradient-to-r from-purple-800 to-indigo-900 text-white space-y-2">
+        <span class="px-3 py-1 rounded-full bg-purple-500/30 text-purple-200 text-xs font-bold">โมดูลที่ 4</span>
+        <h2 class="text-2xl font-bold">🏆 โครงงานสร้างสรรค์ &amp; บันทึกการเรียนรู้ประจำวัน (Daily Journal)</h2>
+        <p class="text-sm text-purple-100">ส่งโครงงาน สะท้อนคิดผ่าน Daily Journal และซิงก์ข้อมูลลง Google Sheets อัตโนมัติ</p>
+      </div>
+
+      <!-- Daily Journal Form -->
+      <section class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <span>📝</span>
+          <span>เขียนบันทึกการเรียนรู้รายวัน (Daily Journal &rarr; Google Sheets)</span>
+        </h3>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สิ่งที่ได้เรียนรู้ในวันนี้ (Learning Key Takeaway):</label>
+            <textarea id="j-learn" rows="3" class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs sm:text-sm" placeholder="เช่น วันนี้ได้ฝึกเขียนบล็อกเงื่อนไข if-then ใน Scratch และเข้าใจการปกป้องรหัสผ่านตาม PDPA"></textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">เป้าหมายสำหรับวันพรุ่งนี้ (Tomorrow Goal):</label>
+            <input type="text" id="j-goal" class="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs" placeholder="เช่น อยากลองต่อเซนเซอร์ Micro:bit วัดแสงแดด">
+          </div>
+          <button onclick="saveJournal()" class="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md transition-all cursor-pointer">
+            💾 บันทึก Daily Journal ลง Google Sheets (+15 แต้ม)
+          </button>
+        </div>
+      </section>
+
+      <!-- Project Showcase Cards -->
+      <section class="space-y-4">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <span>🎨</span>
+          <span>แกลเลอรีผลงานยอดเยี่ยม (Showcase Projects)</span>
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3">
+            <div class="flex justify-between items-center text-xs">
+              <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-bold">🐱 Scratch</span>
+              <span class="text-slate-400">ด.ช. ภัทรพล (ป.5/1)</span>
+            </div>
+            <h4 class="font-bold text-sm text-slate-900 dark:text-white">เกมเขาวงกตแยกขยะรักษ์โลก</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">บังคับตัวละครเก็บขยะพลาสติกและกระดาษไปทิ้งลงถังขยะให้ถูกต้อง มีระบบจับเวลาและนับคะแนน</p>
+            <button onclick="likeProj(this)" class="w-full py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer">
+              ❤️ ไลก์ผลงานนี้
+            </button>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3">
+            <div class="flex justify-between items-center text-xs">
+              <span class="px-2 py-0.5 rounded bg-sky-100 text-sky-800 font-bold">📟 Micro:bit</span>
+              <span class="text-slate-400">ด.ญ. กานดา (ป.5/2)</span>
+            </div>
+            <h4 class="font-bold text-sm text-slate-900 dark:text-white">เครื่องวัดอุณหภูมิห้องแจ้งเตือนพัดลม</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">ตรวจจับอุณหภูมิห้องเรียน หากร้อนเกิน 32 องศา จะส่งสัญญาณไฟกระพริบเตือนครู</p>
+            <button onclick="likeProj(this)" class="w-full py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer">
+              ❤️ ไลก์ผลงานนี้
+            </button>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3">
+            <div class="flex justify-between items-center text-xs">
+              <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">🛡️ PDPA</span>
+              <span class="text-slate-400">ด.ช. ธีรภัทร (ป.6/1)</span>
+            </div>
+            <h4 class="font-bold text-sm text-slate-900 dark:text-white">การ์ตูนอินโฟกราฟิกหยุด Cyberbullying</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">สื่อสร้างสรรค์รณรงค์การใช้คำพูดสุภาพในกลุ่มแชตและการปกป้องภาพถ่ายเพื่อน</p>
+            <button onclick="likeProj(this)" class="w-full py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-semibold hover:bg-indigo-50 hover:text-indigo-600 cursor-pointer">
+              ❤️ ไลก์ผลงานนี้
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- TAB 6: STUDENTS MANAGEMENT                                       -->
+    <!-- ================================================================ -->
+    <div id="tab-students" class="hidden space-y-8">
+      <div class="p-6 rounded-3xl bg-gradient-to-r from-slate-800 to-indigo-900 text-white space-y-2">
+        <h2 class="text-2xl font-bold">👥 ระบบจัดการรายชื่อนักเรียนและซิงก์ Google Sheets</h2>
+        <p class="text-sm text-slate-200">บันทึกและอัปเดตข้อมูลนักเรียนรายบุคคลเชื่อมต่อโดยตรงกับ Spreadsheet ID: <?= spreadsheetId ?></p>
+      </div>
+
+      <section class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h3 class="font-bold text-base text-slate-900 dark:text-white">รายชื่อนักเรียนในชั้นเรียน</h3>
+          <div class="flex gap-2">
+            <button onclick="syncStudentToGas()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer">
+              🔄 ซิงก์รายชื่อทั้งหมดไป Google Sheets
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">
+              <tr>
+                <th class="p-3">อวตาร</th>
+                <th class="p-3">ชื่อ-นามสกุล</th>
+                <th class="p-3">ระดับชั้น</th>
+                <th class="p-3">โรงเรียน</th>
+                <th class="p-3">แต้มสะสม</th>
+                <th class="p-3">สถานะ</th>
+              </tr>
+            </thead>
+            <tbody id="stu-rows" class="divide-y divide-slate-100 dark:divide-slate-800">
+              <tr>
+                <td class="p-3">🐱</td>
+                <td class="p-3 font-bold">ด.ช. ภัทรพล เจริญศิลป์</td>
+                <td class="p-3">ป.5/1</td>
+                <td class="p-3">โรงเรียนอนุบาลนราธิวาส</td>
+                <td class="p-3 text-indigo-600 font-bold font-mono">120 แต้ม</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">กำลังเรียน</span></td>
+              </tr>
+              <tr>
+                <td class="p-3">🦊</td>
+                <td class="p-3 font-bold">ด.ญ. กานดา วงศ์สุวรรณ</td>
+                <td class="p-3">ป.5/1</td>
+                <td class="p-3">โรงเรียนอนุบาลนราธิวาส</td>
+                <td class="p-3 text-indigo-600 font-bold font-mono">115 แต้ม</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">กำลังเรียน</span></td>
+              </tr>
+              <tr>
+                <td class="p-3">🐼</td>
+                <td class="p-3 font-bold">ด.ช. ธีรภัทร ศรีสุข</td>
+                <td class="p-3">ป.5/2</td>
+                <td class="p-3">โรงเรียนอนุบาลนราธิวาส</td>
+                <td class="p-3 text-indigo-600 font-bold font-mono">95 แต้ม</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-bold text-[10px]">ออนไลน์</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-2 items-center">
+          <input type="text" id="stu-name" placeholder="ชื่อ-นามสกุลนักเรียนใหม่" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs">
+          <input type="text" id="stu-grade" value="ป.5/1" placeholder="ระดับชั้น" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs w-24">
+          <button onclick="addStu()" class="px-4 py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-700 cursor-pointer">
+            + เพิ่มนักเรียน
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- TAB 7: LEADERBOARD                                               -->
+    <!-- ================================================================ -->
+    <div id="tab-leaderboard" class="hidden space-y-8">
+      <div class="p-6 rounded-3xl bg-gradient-to-r from-amber-600 to-indigo-800 text-white space-y-2">
+        <h2 class="text-2xl font-bold">👑 ทำเนียบยอดนักโค้ดดิ้ง (Coder Kids Leaderboard)</h2>
+        <p class="text-sm text-amber-100">จัดอันดับคะแนนสะสมจากการทำมินิเกม แบบทดสอบ และโครงงาน</p>
+      </div>
+
+      <section class="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">
+              <tr>
+                <th class="p-3">อันดับ</th>
+                <th class="p-3">นักเรียน</th>
+                <th class="p-3">ระดับชั้น</th>
+                <th class="p-3">ฉายา</th>
+                <th class="p-3">คะแนนรวม</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+              <tr class="bg-amber-50/50 dark:bg-amber-950/20">
+                <td class="p-3 font-extrabold text-amber-600 text-base">🥇 อันดับ 1</td>
+                <td class="p-3 font-bold">🐱 ด.ช. ภัทรพล เจริญศิลป์</td>
+                <td class="p-3">ป.5/1</td>
+                <td class="p-3 text-indigo-600 font-semibold">เซียนโค้ดดิ้งรุ่นจิ๋ว</td>
+                <td class="p-3 font-mono font-bold text-amber-600 text-sm">120 แต้ม</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-bold text-slate-500">🥈 อันดับ 2</td>
+                <td class="p-3 font-bold">🦊 ด.ญ. กานดา วงศ์สุวรรณ</td>
+                <td class="p-3">ป.5/1</td>
+                <td class="p-3 text-indigo-600 font-semibold">ผู้พิทักษ์ข้อมูล PDPA</td>
+                <td class="p-3 font-mono font-bold text-slate-700 dark:text-slate-300 text-sm">115 แต้ม</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-bold text-amber-800 dark:text-amber-600">🥉 อันดับ 3</td>
+                <td class="p-3 font-bold">🐼 ด.ช. ธีรภัทร ศรีสุข</td>
+                <td class="p-3">ป.5/2</td>
+                <td class="p-3 text-indigo-600 font-semibold">ยอดนักคิดอัลกอริทึม</td>
+                <td class="p-3 font-mono font-bold text-slate-700 dark:text-slate-300 text-sm">95 แต้ม</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-6 text-xs text-slate-500 dark:text-slate-400">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div>
+        &copy; 2026 Coder Kids · สื่อการเรียนรู้วิทยาการคำนวณและเทคโนโลยี (สพฐ. &amp; สสวท.)
+      </div>
+      <div class="flex items-center gap-4">
+        <span>โรงเรียนอนุบาลนราธิวาส</span>
+        <span>·</span>
+        <span>Google Apps Script &amp; Sheets</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- 1. AI Tutor Modal -->
+  <div id="ai-tutor-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col h-[520px]">
+      <div class="p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">🤖</span>
+          <div>
+            <div class="font-bold text-sm">ครูพี่โค้ดดิ้ง (AI Tutor)</div>
+            <div class="text-[10px] text-indigo-100">ผู้ช่วยอัจฉริยะวิชาวิทยาการคำนวณ</div>
+          </div>
+        </div>
+        <button onclick="toggleAiTutorModal()" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center text-sm font-bold cursor-pointer">&times;</button>
+      </div>
+
+      <div id="ai-chat-body" class="p-4 flex-1 overflow-y-auto space-y-3 text-xs">
+        <div class="p-3 rounded-2xl bg-indigo-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 space-y-1">
+          <div class="font-bold text-indigo-600">ครูพี่โค้ดดิ้ง:</div>
+          <div>สวัสดีครับน้องๆ! มีข้อสงสัยเรื่องการเขียนบล็อก Scratch, การสั่งงานบอร์ด Micro:bit หรืออยากได้ไอเดียทำโครงงาน ถามครูพี่โค้ดได้เลยนะครับ! ✨</div>
+        </div>
+      </div>
+
+      <div class="p-3 border-t border-slate-200 dark:border-slate-800 flex gap-2">
+        <input type="text" id="ai-input" placeholder="พิมพ์คำถามที่นี่ เช่น ขอไอเดียเกม Scratch..." class="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white" onkeydown="if(event.key==='Enter') sendAiMessage()">
+        <button onclick="sendAiMessage()" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs cursor-pointer">ส่ง</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Student Profile Modal -->
+  <div id="profile-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+          <span>👤</span>
+          <span>โปรไฟล์นักเรียน (Student Profile)</span>
+        </h3>
+        <button onclick="closeProfileModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold cursor-pointer">&times;</button>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950 flex items-center justify-center text-4xl border-2 border-indigo-200">
+          🐱
+        </div>
+        <div>
+          <div class="font-bold text-slate-900 dark:text-white text-base">ด.ช. ภัทรพล เจริญศิลป์</div>
+          <div class="text-xs text-slate-500">ระดับชั้น: ป.5/1 · โรงเรียนอนุบาลนราธิวาส</div>
+          <div class="text-xs text-indigo-600 font-bold mt-1">ฉายา: เซียนโค้ดดิ้งรุ่นจิ๋ว (Level 2)</div>
+        </div>
+      </div>
+
+      <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs space-y-1">
+        <div class="flex justify-between font-semibold">
+          <span>แต้มสะสมทั้งหมด:</span>
+          <span class="text-amber-600 font-bold font-mono">120 แต้ม</span>
+        </div>
+        <div class="flex justify-between">
+          <span>เหรียญตราที่ได้รับ:</span>
+          <span>🛡️ ผู้พิทักษ์ข้อมูล, 🧩 นักคิด CT</span>
+        </div>
+        <div class="flex justify-between">
+          <span>สถานะการเชื่อมต่อ:</span>
+          <span class="text-emerald-600 font-bold">Google Sheets Connected</span>
+        </div>
+      </div>
+
+      <button onclick="closeProfileModal()" class="w-full py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 cursor-pointer">
+        ตกลง
+      </button>
+    </div>
+  </div>
+
+  <!-- 3. Certificate Modal -->
+  <div id="certificate-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-6 space-y-4 border border-slate-200 dark:border-slate-800">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
+        <h3 class="font-bold text-slate-900 dark:text-white">🏆 เกียรติบัตรการเรียนรู้วิทยาการคำนวณ</h3>
+        <button onclick="closeCertificateModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center cursor-pointer">&times;</button>
+      </div>
+
+      <div class="p-8 rounded-2xl border-4 border-double border-indigo-300 dark:border-indigo-800 bg-amber-50/20 dark:bg-slate-950 text-center space-y-3">
+        <div class="text-xs uppercase tracking-widest text-indigo-600 font-bold">สำนักงานคณะกรรมการการศึกษาขั้นพื้นฐาน (สพฐ.)</div>
+        <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">เกียรติบัตรแห่งความสำเร็จทางเทคโนโลยี</h2>
+        <p class="text-xs text-slate-500">ขอมอบเกียรติบัตรฉบับนี้เพื่อแสดงว่า</p>
+        <div class="text-lg sm:text-xl font-bold text-indigo-600 py-1 border-b-2 border-indigo-200 inline-block px-8">
+          ด.ช. ภัทรพล เจริญศิลป์
+        </div>
+        <p class="text-xs text-slate-600 dark:text-slate-300 max-w-md mx-auto leading-relaxed">
+          ได้สำเร็จหลักสูตรสื่อการเรียนการสอนวิทยาการคำนวณและเทคโนโลยี (Coding, PDPA, Scratch &amp; Micro:bit) ด้วยคะแนนสะสม 120 แต้ม
+        </p>
+        <div class="pt-4 flex justify-between items-center text-[11px] text-slate-400">
+          <span>ออกโดย: ระบบ Coder Kids GAS</span>
+          <span>วันที่: <?= Utilities.formatDate(new Date(), 'Asia/Bangkok', 'dd/MM/yyyy') ?></span>
+        </div>
+      </div>
+
+      <!-- Gmail Dispatch Field -->
+      <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs border border-slate-200 dark:border-slate-700">
+        <div class="flex items-center gap-2 flex-1 min-w-[220px]">
+          <span class="font-semibold text-slate-700 dark:text-slate-300">📧 ส่งเข้า Gmail:</span>
+          <input type="email" id="cert-email-val" value="nusorn.ont@thaimooc.ac.th" class="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-white">
+        </div>
+        <button onclick="sendCertGmail()" class="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm cursor-pointer">
+          ส่งเกียรติบัตรเข้า Gmail
+        </button>
+      </div>
+
+      <div class="flex justify-end gap-2">
+        <button onclick="window.print()" class="px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-bold cursor-pointer">🖨️ พิมพ์ / บันทึก PDF</button>
+        <button onclick="closeCertificateModal()" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold cursor-pointer">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Teacher Assessment Report Modal (ปพ.5 & CSV) -->
+  <div id="teacher-report-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-4xl w-full p-6 space-y-4 border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <span class="text-xs font-bold text-purple-600">สพฐ. &amp; สสวท. Standard</span>
+          <h3 class="font-bold text-lg text-slate-900 dark:text-white">🎓 แบบบันทึกผลการประเมินการเรียนรู้ (ปพ.5) วิทยาการคำนวณ</h3>
+        </div>
+        <button onclick="closeTeacherReportModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center font-bold cursor-pointer">&times;</button>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 p-3 bg-purple-50 dark:bg-purple-950/40 rounded-2xl border border-purple-200 dark:border-purple-800 text-xs text-purple-950 dark:text-purple-200">
+        <div>ชั้นประถมศึกษาปีที่ 4/1 · โรงเรียนอนุบาลนราธิวาส · 5 สมรรถนะสำคัญ</div>
+        <div class="flex gap-2">
+          <button onclick="exportTeacherCsv()" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl cursor-pointer">📥 ส่งออก CSV (Excel/Sheets)</button>
+          <button onclick="window.print()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl cursor-pointer">🖨️ พิมพ์ใบรายงาน ปพ.5</button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+        <table class="w-full text-xs text-left">
+          <thead class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold">
+            <tr>
+              <th class="p-2.5">รหัสนักเรียน</th>
+              <th class="p-2.5">ชื่อ-นามสกุล</th>
+              <th class="p-2.5 text-center">PDPA (25)</th>
+              <th class="p-2.5 text-center">การคิดเชิงคำนวณ (25)</th>
+              <th class="p-2.5 text-center">Coding (30)</th>
+              <th class="p-2.5 text-center">Showcase (20)</th>
+              <th class="p-2.5 text-center font-bold text-indigo-600">รวม (100)</th>
+              <th class="p-2.5 text-center">ผลการประเมิน</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300 font-mono">
+            <tr><td class="p-2">CK-4101</td><td class="p-2 font-sans font-bold">ด.ช. ปัณณธร ศรีสว่าง (ปันปัน)</td><td class="p-2 text-center">24</td><td class="p-2 text-center">25</td><td class="p-2 text-center">29</td><td class="p-2 text-center">19</td><td class="p-2 text-center font-bold text-indigo-600">97</td><td class="p-2 text-center"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold font-sans">ดีเยี่ยม (4)</span></td></tr>
+            <tr><td class="p-2">CK-4102</td><td class="p-2 font-sans font-bold">ด.ช. ภัทรพล เจริญศิลป์ (วิน)</td><td class="p-2 text-center">23</td><td class="p-2 text-center">24</td><td class="p-2 text-center">28</td><td class="p-2 text-center">18</td><td class="p-2 text-center font-bold text-indigo-600">93</td><td class="p-2 text-center"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold font-sans">ดีเยี่ยม (4)</span></td></tr>
+            <tr><td class="p-2">CK-4103</td><td class="p-2 font-sans font-bold">ด.ญ. ชนัญชิดา สุขสันต์ (ณิชา)</td><td class="p-2 text-center">25</td><td class="p-2 text-center">23</td><td class="p-2 text-center">27</td><td class="p-2 text-center">19</td><td class="p-2 text-center font-bold text-indigo-600">94</td><td class="p-2 text-center"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold font-sans">ดีเยี่ยม (4)</span></td></tr>
+            <tr><td class="p-2">CK-4104</td><td class="p-2 font-sans font-bold">ด.ญ. ภัทรวดี มงคลกุล (แพรว)</td><td class="p-2 text-center">24</td><td class="p-2 text-center">22</td><td class="p-2 text-center">26</td><td class="p-2 text-center">18</td><td class="p-2 text-center font-bold text-indigo-600">90</td><td class="p-2 text-center"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold font-sans">ดีเยี่ยม (4)</span></td></tr>
+            <tr><td class="p-2">CK-4105</td><td class="p-2 font-sans font-bold">ด.ช. กิตติพงษ์ ใจมั่น (กอล์ฟ)</td><td class="p-2 text-center">22</td><td class="p-2 text-center">21</td><td class="p-2 text-center">25</td><td class="p-2 text-center">17</td><td class="p-2 text-center font-bold text-indigo-600">85</td><td class="p-2 text-center"><span class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-bold font-sans">ดีมาก (3.5)</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Printable Unplugged Worksheets Modal -->
+  <div id="unplugged-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-3xl w-full p-6 space-y-4 border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <span class="text-xs font-bold text-emerald-600">Unplugged Coding (ไม่ต้องใช้คอมพิวเตอร์)</span>
+          <h3 class="font-bold text-lg text-slate-900 dark:text-white">📄 คลังใบงานกิจกรรมวิทยาการคำนวณ A4 พิมพ์ได้จริง</h3>
+        </div>
+        <button onclick="closeUnpluggedModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center font-bold cursor-pointer">&times;</button>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-semibold">
+        <button onclick="selectGasWorksheet(1)" class="p-2.5 rounded-xl border border-emerald-500 bg-emerald-50 text-emerald-800 text-center cursor-pointer">1. ผังงาน Flowchart</button>
+        <button onclick="selectGasWorksheet(2)" class="p-2.5 rounded-xl border border-slate-200 text-slate-700 dark:text-slate-200 text-center cursor-pointer">2. พิกเซล Pixel Art</button>
+        <button onclick="selectGasWorksheet(3)" class="p-2.5 rounded-xl border border-slate-200 text-slate-700 dark:text-slate-200 text-center cursor-pointer">3. เขาวงกตคำสั่ง</button>
+        <button onclick="selectGasWorksheet(4)" class="p-2.5 rounded-xl border border-slate-200 text-slate-700 dark:text-slate-200 text-center cursor-pointer">4. สำรวจ PDPA</button>
+      </div>
+
+      <div id="gas-worksheet-content" class="p-6 border-2 border-slate-300 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 space-y-3">
+        <div class="border-b pb-2 text-center">
+          <h4 class="font-bold text-base">ใบงานที่ 1: ผังงาน (Flowchart) ลำดับขั้นตอนการต้มบะหมี่กึ่งสำเร็จรูป</h4>
+          <p class="text-xs text-slate-500">ชื่อ-นามสกุล: .............................................................. เลขที่: ............ ชั้น: ป.4/1</p>
+        </div>
+        <p class="text-xs">คำชี้แจง: เรียงลำดับขั้นตอนและใส่สัญลักษณ์ผังงาน Start, Process, Decision, End ให้ถูกต้อง</p>
+        <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl text-xs space-y-1">
+          <div>[1] ต้มน้ำให้เดือด &rarr; [2] ใส่เส้นและเครื่องปรุง &rarr; [3] จับเวลา 3 นาที &rarr; [4] ตรวจสอบความสุก &rarr; [5] ตักเสิร์ฟ</div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="window.print()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer">🖨️ พิมพ์ใบงานนี้ (Print A4)</button>
+        <button onclick="closeUnpluggedModal()" class="px-5 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold cursor-pointer">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Daily Bug Hunter Modal -->
+  <div id="bug-hunter-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-xl w-full p-6 space-y-4 border border-slate-200 dark:border-slate-800">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <span class="text-xs font-bold text-rose-600">Daily Quest (+15 EXP)</span>
+          <h3 class="font-bold text-lg text-slate-900 dark:text-white">🐞 ภารกิจล่า Bug ประจำวัน (Daily Bug Hunter)</h3>
+        </div>
+        <button onclick="closeBugHunterModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center font-bold cursor-pointer">&times;</button>
+      </div>
+
+      <div class="p-4 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200 dark:border-amber-900 text-xs text-amber-950 dark:text-amber-200 space-y-1">
+        <p class="font-bold">⚠️ โจทย์: น้องแมวเดินไม่ยอมหยุดและโปรแกรมค้าง (Infinite Loop)</p>
+        <p>โค้ด: repeat until &lt;steps = 5&gt; { move (10); change [steps] by (0); }</p>
+      </div>
+
+      <div class="space-y-2 text-xs font-medium">
+        <p class="font-bold text-slate-800 dark:text-slate-200">เลือกวิธีแก้บั๊กที่ถูกต้อง:</p>
+        <button onclick="solveBug(true)" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-emerald-500 text-left cursor-pointer">
+          A) เปลี่ยน change [steps] by (0) เป็น change [steps] by (1)
+        </button>
+        <button onclick="solveBug(false)" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-rose-500 text-left cursor-pointer">
+          B) เปลี่ยน move (10) เป็น move (0)
+        </button>
+      </div>
+
+      <div id="bug-feedback" class="hidden p-3 rounded-xl text-xs font-bold"></div>
+    </div>
+  </div>
+
+  <!-- 7. Junior Code & Kids AI Modal -->
+  <div id="junior-ai-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-6 space-y-4 border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <span class="text-xs font-bold text-indigo-600">Text-based Coding &amp; Machine Learning</span>
+          <h3 class="font-bold text-lg text-slate-900 dark:text-white">💻 Junior Code &amp; Kids AI Lab</h3>
+        </div>
+        <button onclick="closeJuniorAiModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center font-bold cursor-pointer">&times;</button>
+      </div>
+
+      <!-- Python Runner -->
+      <div class="p-4 rounded-2xl bg-slate-950 text-white font-mono text-xs space-y-2">
+        <div class="flex justify-between items-center text-slate-400">
+          <span>main.py (Python 3.11)</span>
+          <button onclick="runGasPython()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white font-sans font-bold cursor-pointer">▶️ รันโค้ด</button>
+        </div>
+        <pre class="text-emerald-400 leading-relaxed">
+# คำนวณสูตรคูณแม่ 5
+number = 5
+for i in range(1, 6):
+    print(f"{number} x {i} = {number * i}")
+        </pre>
+        <div id="py-output" class="p-2 rounded bg-black/60 text-slate-300 border border-slate-800">
+          ผลลัพธ์: พร้อมประมวลผล...
+        </div>
+      </div>
+
+      <!-- Kids AI Lab Waste Sorting -->
+      <div class="p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-xs space-y-2">
+        <h4 class="font-bold text-purple-900 dark:text-purple-200">🧠 ทดสอบทำนายผลขยะด้วยปัญญาประดิษฐ์ (AI Prediction)</h4>
+        <div class="flex items-center gap-3">
+          <div class="text-3xl">🥤</div>
+          <div>
+            <div class="font-bold">แก้วน้ำพลาสติกชานม</div>
+            <div class="text-slate-500">ผลทำนายโมเดล: ♻️ ขยะรีไซเคิล (ความแม่นยำ 97%)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ==================== BUDDY SYSTEM MODAL ==================== -->
+  <div id="buddy-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <h3 class="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <span>👥 ระบบคู่หูเรียนรู้ (Buddy System)</span>
+          </h3>
+          <p class="text-xs text-slate-500">จับคู่เรียนรู้กับเพื่อนในระบบ ส่งอิโมจิให้กำลังใจกัน</p>
+        </div>
+        <button onclick="closeBuddyModal()" class="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 cursor-pointer">✕</button>
+      </div>
+
+      <!-- Active Buddy Card -->
+      <div class="p-4 rounded-2xl bg-indigo-50 dark:bg-slate-800 border border-indigo-200 dark:border-slate-700 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">🦊</span>
+          <div>
+            <div class="font-bold text-sm text-slate-900 dark:text-white">ณิชา (คู่หูของคุณ)</div>
+            <div class="text-xs text-emerald-600 font-semibold">🟢 กำลังออนไลน์ • สตรีค 6 วัน</div>
+            <div class="text-[11px] text-slate-500">เพิ่งพิชิตแบบทดสอบ PDPA สำเร็จ (+15 แต้ม)</div>
+          </div>
+        </div>
+        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-600 text-white font-mono">LV.3</span>
+      </div>
+
+      <!-- Cheering Reactions Pad -->
+      <div>
+        <div class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">คลิกเพื่อส่งอิโมจิให้กำลังใจเพื่อน (+5 แต้ม):</div>
+        <div class="grid grid-cols-4 gap-2 text-center text-xs">
+          <button onclick="sendGasCheer('🔥', 'สู้ๆ นะเพื่อน!')" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-amber-50 cursor-pointer">
+            <div class="text-2xl">🔥</div>
+            <div class="font-bold text-[10px] mt-1">สู้ๆ นะ!</div>
+          </button>
+          <button onclick="sendGasCheer('⭐', 'สุดยอดไปเลย!')" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-amber-50 cursor-pointer">
+            <div class="text-2xl">⭐</div>
+            <div class="font-bold text-[10px] mt-1">สุดยอด!</div>
+          </button>
+          <button onclick="sendGasCheer('🚀', 'ลุยไปด้วยกัน!')" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-amber-50 cursor-pointer">
+            <div class="text-2xl">🚀</div>
+            <div class="font-bold text-[10px] mt-1">ลุยเลย!</div>
+          </button>
+          <button onclick="sendGasCheer('💖', 'เป็นกำลังใจให้!')" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-amber-50 cursor-pointer">
+            <div class="text-2xl">💖</div>
+            <div class="font-bold text-[10px] mt-1">ส่งใจให้!</div>
+          </button>
+        </div>
+      </div>
+
+      <div id="gas-cheer-toast" class="hidden p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 font-bold text-center"></div>
+    </div>
+  </div>
+
+  <!-- ==================== JAVASCRIPT LOGIC ==================== -->
+  <script>
+    // State
+    let currentTab = 'dashboard';
+    let currentPoints = 120;
+    let isAdmin = false;
+
+    // 1. Navigation Switcher
+    function switchTab(tabId) {
+      const allTabs = ['dashboard', 'roadmap', 'mod1', 'mod2', 'mod3', 'mod4', 'classroom', 'didYouKnow', 'students', 'leaderboard'];
+      allTabs.forEach(t => {
+        const el = document.getElementById('tab-' + t);
+        if (el) el.classList.add('hidden');
+        const navEl = document.getElementById('nav-' + t);
+        if (navEl) {
+          navEl.classList.remove('text-indigo-600', 'font-bold', 'border-b-2', 'border-indigo-600');
+        }
+        const subnavEl = document.getElementById('subnav-' + t);
+        if (subnavEl) {
+          subnavEl.classList.remove('bg-indigo-600', 'text-white', 'shadow-xs');
+          subnavEl.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-200');
+        }
+      });
+
+      const target = document.getElementById('tab-' + tabId);
+      if (target) {
+        target.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      const activeNav = document.getElementById('nav-' + tabId);
+      if (activeNav) {
+        activeNav.classList.add('text-indigo-600', 'font-bold', 'border-b-2', 'border-indigo-600');
+      }
+      const activeSubnav = document.getElementById('subnav-' + tabId);
+      if (activeSubnav) {
+        activeSubnav.classList.add('bg-indigo-600', 'text-white', 'shadow-xs');
+        activeSubnav.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-200');
+      }
+      currentTab = tabId;
+    }
+
+    // 2. Theme Toggle
+    function toggleAppTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('coderkids_gas_theme', isDark ? 'dark' : 'light');
+      document.getElementById('theme-icon').innerText = isDark ? '☀️' : '🌙';
+    }
+
+    // Load saved theme
+    if (localStorage.getItem('coderkids_gas_theme') === 'dark') {
+      document.documentElement.classList.add('dark');
+      const icon = document.getElementById('theme-icon');
+      if (icon) icon.innerText = '☀️';
+    }
+
+    // 3. Admin Mode Toggle
+    function toggleAdminMode() {
+      isAdmin = !isAdmin;
+      const btn = document.getElementById('admin-mode-btn');
+      const text = document.getElementById('admin-text');
+      if (isAdmin) {
+        btn.classList.add('bg-amber-500', 'text-white', 'border-amber-600');
+        btn.classList.remove('bg-slate-100', 'text-slate-600');
+        text.innerText = 'ผู้ดูแลระบบ';
+        showStatusBanner('🛡️ สลับสู่โหมดผู้ดูแลระบบ (Admin Mode) สำเร็จ');
+      } else {
+        btn.classList.remove('bg-amber-500', 'text-white', 'border-amber-600');
+        btn.classList.add('bg-slate-100', 'text-slate-600');
+        text.innerText = 'โหมดสมาชิก';
+        showStatusBanner('👤 สลับสู่โหมดนักเรียน (Student Mode) สำเร็จ');
+      }
+    }
+
+    // 4. Confetti Trigger
+    function triggerConfetti() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      }
+    }
+
+    // 5. Status Banner
+    function showStatusBanner(msg) {
+      const b = document.getElementById('status-banner');
+      const t = document.getElementById('status-banner-text');
+      t.innerText = msg;
+      b.classList.remove('hidden');
+      setTimeout(() => b.classList.add('hidden'), 4000);
+    }
+
+    // 6. Goal Checklist
+    function toggleGoalComplete(checkbox) {
+      const badge = document.getElementById('goal-status-badge');
+      const text = document.getElementById('goal-text');
+      if (checkbox.checked) {
+        triggerConfetti();
+        currentPoints += 10;
+        document.getElementById('points-display').innerText = currentPoints;
+        document.getElementById('stats-points').innerText = currentPoints;
+        badge.innerHTML = '<span>✓</span><span>สำเร็จแล้ว! +10 แต้มเข้าสู่โปรไฟล์</span>';
+        badge.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300';
+        text.classList.add('line-through', 'text-slate-500');
+        showStatusBanner('🎉 ยินดีด้วย! บรรลุเป้าหมายการเรียนรู้วันนี้ (+10 แต้ม)');
+      } else {
+        badge.innerHTML = '<span>⏳ รอดำเนินการ</span>';
+        badge.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300';
+        text.classList.remove('line-through', 'text-slate-500');
+      }
+    }
+
+    function setCustomGoal(goalText, category) {
+      document.getElementById('goal-text').innerText = goalText;
+      document.getElementById('goal-check').checked = false;
+      toggleGoalComplete({ checked: false });
+      showStatusBanner('🎯 อัปเดตเป้าหมายใหม่เรียบร้อย!');
+    }
+
+    // 7. PDPA Card Checking
+    function checkPdpa(btn, isCorrect, isCommon) {
+      const parent = btn.closest('.p-4');
+      const msg = parent.querySelector('.result-msg');
+      msg.classList.remove('hidden');
+      if (isCorrect) {
+        msg.className = 'result-msg text-[11px] font-bold text-emerald-600';
+        msg.innerText = isCommon ? '✅ ถูกต้อง! เป็นข้อมูลทั่วไปที่เปิดเผยได้' : '✅ ถูกต้อง! เป็นข้อมูลอ่อนไหวที่ต้องได้รับการยินยอมตาม PDPA';
+        triggerConfetti();
+      } else {
+        msg.className = 'result-msg text-[11px] font-bold text-rose-600';
+        msg.innerText = '❌ ยังไม่ถูกต้อง ลองใหม่อีกครั้งนะครับ';
+      }
+    }
+
+    // 8. Password Strength Checker
+    function checkPasswordStrength(val) {
+      let score = 0;
+      if (val.length >= 8) score++;
+      if (/[A-Z]/.test(val)) score++;
+      if (/[0-9]/.test(val)) score++;
+      if (/[^A-Za-z0-9]/.test(val)) score++;
+
+      const bar = document.getElementById('pwd-bar');
+      const lbl = document.getElementById('pwd-strength-label');
+      const scr = document.getElementById('pwd-strength-score');
+      
+      scr.innerText = score + ' / 4';
+      if (score === 0) {
+        bar.style.width = '0%';
+        lbl.innerText = 'พิมพ์รหัสผ่าน...';
+      } else if (score === 1) {
+        bar.style.width = '25%';
+        bar.className = 'h-full bg-rose-500 transition-all duration-300';
+        lbl.innerText = '⚠️ ง่ายมาก เสี่ยงถูกเจาะระบบ';
+        lbl.className = 'text-rose-500 font-bold';
+      } else if (score === 2) {
+        bar.style.width = '50%';
+        bar.className = 'h-full bg-amber-500 transition-all duration-300';
+        lbl.innerText = 'พอใช้ได้ ควรเพิ่มอักษรพิเศษ';
+        lbl.className = 'text-amber-500 font-bold';
+      } else if (score === 3) {
+        bar.style.width = '75%';
+        bar.className = 'h-full bg-sky-500 transition-all duration-300';
+        lbl.innerText = 'แข็งแรงดีมาก';
+        lbl.className = 'text-sky-500 font-bold';
+      } else {
+        bar.style.width = '100%';
+        bar.className = 'h-full bg-emerald-500 transition-all duration-300';
+        lbl.innerText = '🛡️ ยอดเยี่ยม! ปลอดภัยสูงมาก';
+        lbl.className = 'text-emerald-500 font-bold';
+      }
+    }
+
+    // 9. Maze Game
+    let mazeCmds = [];
+    function initMazeBoard() {
+      const b = document.getElementById('maze-board');
+      if (!b) return;
+      b.innerHTML = '';
+      for (let i = 0; i < 16; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'rounded-lg flex items-center justify-center font-bold text-lg ' + (i === 0 ? 'bg-indigo-600' : i === 15 ? 'bg-amber-500' : 'bg-slate-700');
+        if (i === 0) cell.innerText = '🤖';
+        else if (i === 15) cell.innerText = '⭐';
+        b.appendChild(cell);
+      }
+    }
+    initMazeBoard();
+
+    function addMazeCmd(cmd) {
+      mazeCmds.push(cmd);
+      renderMazeCmds();
+    }
+    function resetMaze() {
+      mazeCmds = [];
+      renderMazeCmds();
+      initMazeBoard();
+    }
+    function renderMazeCmds() {
+      const el = document.getElementById('maze-cmds');
+      if (mazeCmds.length === 0) {
+        el.innerHTML = '<span class="text-slate-400">ยังไม่มีคำสั่ง (กดปุ่มด้านบน)</span>';
+        return;
+      }
+      el.innerHTML = mazeCmds.map(c => `<span class="px-2 py-1 rounded bg-indigo-600 text-white">${c}</span>`).join('');
+    }
+    function runMaze() {
+      if (mazeCmds.length === 0) {
+        showStatusBanner('โปรดเพิ่มคำสั่งก่อนประมวลผล');
+        return;
+      }
+      showStatusBanner('🤖 กำลังประมวลผลอัลกอริทึม...');
+      setTimeout(() => {
+        triggerConfetti();
+        currentPoints += 15;
+        document.getElementById('points-display').innerText = currentPoints;
+        showStatusBanner('🎉 ยอดเยี่ยม! หุ่นยนต์เดินทางถึงเป้าหมายแล้ว (+15 แต้ม)');
+      }, 1000);
+    }
+
+    // 10. Scratch Canvas Game
+    let scratchAnim;
+    let catY = 180;
+    let catVy = 0;
+    let isJumping = false;
+    let coinX = 400;
+    let coinScore = 0;
+
+    function startScratchGame() {
+      const cvs = document.getElementById('scratch-canvas');
+      const ctx = cvs.getContext('2d');
+      coinScore = 0;
+      document.getElementById('scratch-score').innerText = coinScore;
+
+      if (scratchAnim) cancelAnimationFrame(scratchAnim);
+
+      function loop() {
+        ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+        // Ground
+        ctx.fillStyle = '#64748b';
+        ctx.fillRect(0, 220, cvs.width, 40);
+
+        // Physics
+        catVy += 0.6;
+        catY += catVy;
+        if (catY >= 180) {
+          catY = 180;
+          catVy = 0;
+          isJumping = false;
+        }
+
+        // Draw Cat
+        ctx.font = '36px sans-serif';
+        ctx.fillText('🐱', 60, catY + 30);
+
+        // Coin
+        coinX -= 3;
+        if (coinX < -20) coinX = 480;
+        ctx.fillText('🪙', coinX, 190);
+
+        // Collision Check
+        if (Math.abs(coinX - 60) < 30 && catY > 150) {
+          coinScore++;
+          document.getElementById('scratch-score').innerText = coinScore;
+          coinX = 480;
+          triggerConfetti();
+        }
+
+        scratchAnim = requestAnimationFrame(loop);
+      }
+      loop();
+      showStatusBanner('▶️ รันเกม Scratch แล้ว! กดปุ่ม Space เพื่อกระโดด');
+    }
+
+    function scratchJump() {
+      if (!isJumping) {
+        catVy = -11;
+        isJumping = true;
+      }
+    }
+
+    window.addEventListener('keydown', e => {
+      if (e.code === 'Space' && currentTab === 'mod3') {
+        e.preventDefault();
+        scratchJump();
+      }
+    });
+
+    // 11. Micro:bit Simulator
+    const microGrid = document.getElementById('micro-grid');
+    if (microGrid) {
+      for (let i = 0; i < 25; i++) {
+        const led = document.createElement('div');
+        led.className = 'pixel-led';
+        led.id = 'led-' + i;
+        microGrid.appendChild(led);
+      }
+    }
+
+    function showHeart() {
+      const heartIdx = [1, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 22];
+      for (let i = 0; i < 25; i++) {
+        const el = document.getElementById('led-' + i);
+        if (el) el.className = 'pixel-led ' + (heartIdx.includes(i) ? 'on' : '');
+      }
+    }
+    showHeart();
+
+    function microButton(btn) {
+      if (btn === 'A') {
+        showHeart();
+        showStatusBanner('📟 Micro:bit: แสดงผลไอคอนหัวใจ (Heart Icon)');
+      } else if (btn === 'B') {
+        const smileIdx = [6, 8, 17, 21, 22, 23];
+        for (let i = 0; i < 25; i++) {
+          const el = document.getElementById('led-' + i);
+          if (el) el.className = 'pixel-led ' + (smileIdx.includes(i) ? 'on' : '');
+        }
+        showStatusBanner('📟 Micro:bit: แสดงผลหน้ายิ้ม (Smile Face)');
+      } else {
+        for (let i = 0; i < 25; i++) {
+          const el = document.getElementById('led-' + i);
+          if (el) el.className = 'pixel-led on';
+        }
+        showStatusBanner('📟 Micro:bit: สว่างเต็มหน้าจอ 5x5');
+      }
+      triggerConfetti();
+    }
+
+    function setTemp(v) {
+      document.getElementById('m-temp').innerHTML = v + ' &deg;C';
+    }
+
+    function syncSensorToGas() {
+      const t = document.getElementById('m-temp').innerText;
+      showStatusBanner('⏳ กำลังส่งค่าเซนเซอร์ ' + t + ' สู่ Google Sheets...');
+      setTimeout(() => {
+        triggerConfetti();
+        showStatusBanner('✅ ซิงก์ค่าเซนเซอร์อุณหภูมิลง Google Sheets สำเร็จ');
+      }, 700);
+    }
+
+    // 12. Daily Journal
+    function saveJournal() {
+      const text = document.getElementById('j-learn').value;
+      if (!text) {
+        showStatusBanner('⚠️ กรุณากรอกสิ่งที่ได้เรียนรู้ก่อนบันทึก');
+        return;
+      }
+      showStatusBanner('⏳ กำลังบันทึก Daily Journal สู่ Google Sheets...');
+      const entry = {
+        studentId: 'ST-01',
+        studentName: 'ด.ช. ภัทรพล เจริญศิลป์',
+        learningKey: text,
+        pointsEarned: 15
+      };
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(() => {
+            triggerConfetti();
+            currentPoints += 15;
+            document.getElementById('points-display').innerText = currentPoints;
+            showStatusBanner('✅ บันทึก Daily Journal ลง Google Sheets เรียบร้อย (+15 แต้ม)');
+          })
+          .saveDailyJournal(entry, 'student@coderkids.school');
+      } else {
+        setTimeout(() => {
+          triggerConfetti();
+          currentPoints += 15;
+          document.getElementById('points-display').innerText = currentPoints;
+          showStatusBanner('✅ บันทึก Daily Journal สำเร็จ (+15 แต้ม)');
+        }, 800);
+      }
+    }
+
+    function likeProj(btn) {
+      btn.innerText = '❤️ ไลก์แล้ว (+1)';
+      btn.classList.add('text-rose-600', 'font-bold');
+      triggerConfetti();
+    }
+
+    // 13. Student Management
+    function addStu() {
+      const name = document.getElementById('stu-name').value;
+      const grade = document.getElementById('stu-grade').value || 'ป.5/1';
+      if (!name) return;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="p-3">🐱</td><td class="p-3 font-bold">${name}</td><td class="p-3">${grade}</td><td class="p-3">โรงเรียนอนุบาลนราธิวาส</td><td class="p-3 text-indigo-600 font-bold">65 แต้ม</td><td class="p-3"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">กำลังเรียน</span></td>`;
+      document.getElementById('stu-rows').appendChild(tr);
+      document.getElementById('stu-name').value = '';
+      showStatusBanner('✅ เพิ่มนักเรียน ' + name + ' เรียบร้อยแล้ว');
+    }
+
+    function syncStudentToGas() {
+      showStatusBanner('⏳ กำลังส่งข้อมูลนักเรียนลง Google Sheets...');
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(res => {
+            triggerConfetti();
+            showStatusBanner('✅ ซิงก์รายชื่อนักเรียนสู่ Google Sheets สำเร็จ');
+          })
+          .saveProfileToSheet({ name: 'ด.ช. ภัทรพล เจริญศิลป์', grade: 'ป.5/1' }, currentPoints, 3, [], 'school@gas.th');
+      } else {
+        setTimeout(() => {
+          triggerConfetti();
+          showStatusBanner('✅ ซิงก์รายชื่อนักเรียนสู่ Google Sheets สำเร็จ');
+        }, 700);
+      }
+    }
+
+    // 14. Modals
+    function openCertificateModal() {
+      document.getElementById('certificate-modal').classList.remove('hidden');
+    }
+    function closeCertificateModal() {
+      document.getElementById('certificate-modal').classList.add('hidden');
+    }
+    function openProfileModal() {
+      document.getElementById('profile-modal').classList.remove('hidden');
+    }
+    function closeProfileModal() {
+      document.getElementById('profile-modal').classList.add('hidden');
+    }
+    function toggleAiTutorModal() {
+      document.getElementById('ai-tutor-modal').classList.toggle('hidden');
+    }
+
+    // 15. AI Tutor
+    function sendAiMessage() {
+      const input = document.getElementById('ai-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const body = document.getElementById('ai-chat-body');
+      
+      // User bubble
+      const u = document.createElement('div');
+      u.className = 'p-3 rounded-2xl bg-indigo-600 text-white space-y-1 ml-auto max-w-[85%]';
+      u.innerHTML = `<div class="font-bold text-[10px] text-indigo-200">คุณ:</div><div>${text}</div>`;
+      body.appendChild(u);
+      input.value = '';
+      body.scrollTop = body.scrollHeight;
+
+      // Loading bot bubble
+      const b = document.createElement('div');
+      b.className = 'p-3 rounded-2xl bg-indigo-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 space-y-1 max-w-[85%]';
+      b.innerHTML = `<div class="font-bold text-indigo-600">ครูพี่โค้ดดิ้ง:</div><div>กำลังคิดคำตอบให้น้องๆ อยู่นะครับ... 🤖</div>`;
+      body.appendChild(b);
+      body.scrollTop = body.scrollHeight;
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(res => {
+            b.innerHTML = `<div class="font-bold text-indigo-600">ครูพี่โค้ดดิ้ง:</div><div>${res.reply || 'ขอให้สนุกกับการเขียนโค้ดนะครับ!'}</div>`;
+            body.scrollTop = body.scrollHeight;
+          })
+          .handleAiTutorQuery(text, {});
+      } else {
+        setTimeout(() => {
+          let reply = 'ยอดเยี่ยมมากครับ! ลองนำบล็อกเงื่อนไข if-then ร่วมกับตัวแปร Score เพื่อสร้างระบบเก็บแต้มใน Scratch ดูนะครับ ✨';
+          if (text.includes('ไอเดีย')) {
+            reply = '💡 ไอเดียยอดนิยม: 1. เกมเขาวงกตเก็บขยะแยกสี 2. เครื่องตรวจจับอุณหภูมิ Micro:bit 3. บัตรอวยพรดิจิทัลพร้อมเสียงดนตรี!';
+          }
+          b.innerHTML = `<div class="font-bold text-indigo-600">ครูพี่โค้ดดิ้ง:</div><div>${reply}</div>`;
+          body.scrollTop = body.scrollHeight;
+        }, 700);
+      }
+    }
+
+    // 16. Web Speech API (Thai Text-to-Speech)
+    function speakThai(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'th-TH';
+        u.rate = 0.95;
+        window.speechSynthesis.speak(u);
+        showStatusBanner('🔊 กำลังอ่านออกเสียงบรรยายภาษาไทย...');
+      } else {
+        showStatusBanner('⚠️ เบราว์เซอร์ไม่รองรับ Speech Synthesis');
+      }
+    }
+
+    // 17. Send Certificate via Gmail
+    function sendCertGmail() {
+      const email = document.getElementById('cert-email-val').value || 'nusorn.ont@thaimooc.ac.th';
+      showStatusBanner('⏳ กำลังส่งเกียรติบัตรไปยัง ' + email + '...');
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(() => {
+            triggerConfetti();
+            showStatusBanner('✅ ส่งเกียรติบัตรเข้า Gmail (' + email + ') สำเร็จเรียบร้อย!');
+          })
+          .withFailureHandler(err => {
+            showStatusBanner('❌ ส่งอีเมลล้มเหลว: ' + err);
+          })
+          .sendCertificateEmail(email, 'ด.ช. ภัทรพล เจริญศิลป์', 'วิทยาการคำนวณและเทคโนโลยี');
+      } else {
+        setTimeout(() => {
+          triggerConfetti();
+          showStatusBanner('✅ ส่งเกียรติบัตรเข้า Gmail (' + email + ') สำเร็จเรียบร้อย!');
+        }, 800);
+      }
+    }
+
+    // 18. Teacher Assessment Report Modal & CSV
+    function openTeacherReportModal() {
+      document.getElementById('teacher-report-modal').classList.remove('hidden');
+    }
+    function closeTeacherReportModal() {
+      document.getElementById('teacher-report-modal').classList.add('hidden');
+    }
+    function exportTeacherCsv() {
+      const csv = '\uFEFF' + [
+        'รหัสนักเรียน,ชื่อ-นามสกุล,PDPA (25),การคิดเชิงคำนวณ (25),Coding (30),Showcase (20),รวม (100),ผลการประเมิน',
+        'CK-4101,ด.ช. ปัณณธร ศรีสว่าง,24,25,29,19,97,ดีเยี่ยม (4)',
+        'CK-4102,ด.ช. ภัทรพล เจริญศิลป์,23,24,28,18,93,ดีเยี่ยม (4)',
+        'CK-4103,ด.ญ. ชนัญชิดา สุขสันต์,25,23,27,19,94,ดีเยี่ยม (4)',
+        'CK-4104,ด.ญ. ภัทรวดี มงคลกุล,24,22,26,18,90,ดีเยี่ยม (4)',
+        'CK-4105,ด.ช. กิตติพงษ์ ใจมั่น,22,21,25,17,85,ดีมาก (3.5)'
+      ].join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ปพ5_วิทยาการคำนวณ_ป4.csv';
+      a.click();
+      showStatusBanner('✅ ดาวน์โหลดไฟล์ ปพ.5 (CSV) เรียบร้อยแล้ว');
+    }
+
+    // 19. Unplugged Worksheets
+    function openUnpluggedModal() {
+      document.getElementById('unplugged-modal').classList.remove('hidden');
+    }
+    function closeUnpluggedModal() {
+      document.getElementById('unplugged-modal').classList.add('hidden');
+    }
+    function selectGasWorksheet(num) {
+      const box = document.getElementById('gas-worksheet-content');
+      if (num === 1) {
+        box.innerHTML = '<div class="border-b pb-2 text-center"><h4 class="font-bold text-base">ใบงานที่ 1: ผังงาน (Flowchart) การต้มบะหมี่</h4><p class="text-xs text-slate-500">ชื่อ-นามสกุล: .............................................................. ชั้น: ป.4/1</p></div><p class="text-xs">คำชี้แจง: เรียงลำดับขั้นตอนและใส่สัญลักษณ์ Start, Process, Decision, End</p><div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl text-xs">[1] ต้มน้ำ &rarr; [2] ใส่เครื่องปรุง &rarr; [3] รอ 3 นาที &rarr; [4] ตรวจสอบความสุก &rarr; [5] ตักเสิร์ฟ</div>';
+      } else if (num === 2) {
+        box.innerHTML = '<div class="border-b pb-2 text-center"><h4 class="font-bold text-base">ใบงานที่ 2: ถอดรหัสพิกเซลเลขฐานสอง (8x8 Pixel Art)</h4><p class="text-xs text-slate-500">ชื่อ-นามสกุล: .............................................................. ชั้น: ป.4/1</p></div><p class="text-xs">คำชี้แจง: 0 = สีขาว, 1 = ระบายสีดำ ถอดรหัสภาพหัวใจ 8 แถว</p><div class="font-mono text-xs p-3 bg-slate-50 dark:bg-slate-900 rounded-xl">01100110<br>11111111<br>11111111<br>01111110<br>00111100<br>00011000</div>';
+      } else if (num === 3) {
+        box.innerHTML = '<div class="border-b pb-2 text-center"><h4 class="font-bold text-base">ใบงานที่ 3: เขาวงกตคำสั่งนำทางหุ่นยนต์</h4><p class="text-xs text-slate-500">ชื่อ-นามสกุล: .............................................................. ชั้น: ป.4/1</p></div><p class="text-xs">คำชี้แจง: เขียนลูกศร &uarr; (เดินหน้า) &larr; (เลี้ยวซ้าย) &rarr; (เลี้ยวขวา) หลบสิ่งกีดขวางไปถึงธงชัยชนะ</p>';
+      } else {
+        box.innerHTML = '<div class="border-b pb-2 text-center"><h4 class="font-bold text-base">ใบงานที่ 4: สำรวจและจำแนกข้อมูล PDPA ในโรงเรียน</h4><p class="text-xs text-slate-500">ชื่อ-นามสกุล: .............................................................. ชั้น: ป.4/1</p></div><p class="text-xs">คำชี้แจง: ติ๊กเครื่องหมาย &check; ข้อมูลทั่วไป vs ข้อมูลอ่อนไหว (ห้ามแชร์)</p><div class="text-xs space-y-1 p-3 bg-slate-50 dark:bg-slate-900 rounded-xl"><div>1. บัตรประชาชน 13 หลัก &rarr; [ ] ข้อมูลอ่อนไหว</div><div>2. ชื่อเล่น &rarr; [ ] ข้อมูลทั่วไป</div><div>3. รหัสผ่าน Facebook &rarr; [ ] ข้อมูลอ่อนไหว</div></div>';
+      }
+    }
+
+    // 20. Daily Bug Hunter
+    function openBugHunterModal() {
+      document.getElementById('bug-hunter-modal').classList.remove('hidden');
+      document.getElementById('bug-feedback').classList.add('hidden');
+    }
+    function closeBugHunterModal() {
+      document.getElementById('bug-hunter-modal').classList.add('hidden');
+    }
+    function solveBug(isCorrect) {
+      const fb = document.getElementById('bug-feedback');
+      fb.classList.remove('hidden');
+      if (isCorrect) {
+        fb.className = 'p-3 rounded-xl text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200';
+        fb.innerText = '🎉 ถูกต้องยอดเยี่ยม! แก้ไข steps เป็น +1 ทำให้ลูปหยุดเมื่อถึง 5 (+15 EXP)';
+        triggerConfetti();
+        currentPoints += 15;
+        document.getElementById('points-display').innerText = currentPoints;
+      } else {
+        fb.className = 'p-3 rounded-xl text-xs font-bold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200';
+        fb.innerText = '❌ ยังไม่ถูกต้อง การเปลี่ยนก้าวเดินไม่ได้แก้ปัญหาค่าตัวแปร steps ที่ไม่เพิ่มขึ้น';
+      }
+    }
+
+    // 21. Junior Code & Kids AI Lab
+    function openJuniorAiModal() {
+      document.getElementById('junior-ai-modal').classList.remove('hidden');
+    }
+    function closeJuniorAiModal() {
+      document.getElementById('junior-ai-modal').classList.add('hidden');
+    }
+    function runGasPython() {
+      const out = document.getElementById('py-output');
+      out.innerText = '⏳ กำลังรันสคริปต์ Python...';
+      setTimeout(() => {
+        out.innerHTML = '5 x 1 = 5<br>5 x 2 = 10<br>5 x 3 = 15<br>5 x 4 = 20<br>5 x 5 = 25<br><span class="text-emerald-400 font-bold">✨ ประมวลผลสำเร็จ! (+10 แต้ม)</span>';
+        triggerConfetti();
+        currentPoints += 10;
+        document.getElementById('points-display').innerText = currentPoints;
+      }, 500);
+    }
+    // 22. Categorized Navigation Dropdowns & Mobile Nav
+    function toggleGasDropdown(id) {
+      const el = document.getElementById(id);
+      const isHidden = el.classList.contains('hidden');
+      closeAllGasDropdowns();
+      if (isHidden) {
+        el.classList.remove('hidden');
+      }
+    }
+
+    function closeAllGasDropdowns() {
+      ['dropdown-modules', 'dropdown-labs', 'dropdown-system'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+      });
+    }
+
+    function toggleGasMobileNav() {
+      const mob = document.getElementById('gas-mobile-nav');
+      if (mob) mob.classList.toggle('hidden');
+    }
+
+    // 23. Buddy System Modals & Cheering
+    function openBuddyModal() {
+      document.getElementById('buddy-modal').classList.remove('hidden');
+    }
+    function closeBuddyModal() {
+      document.getElementById('buddy-modal').classList.add('hidden');
+    }
+    function sendGasCheer(emoji, text) {
+      triggerConfetti();
+      currentPoints += 5;
+      document.getElementById('points-display').innerText = currentPoints;
+      const t = document.getElementById('gas-cheer-toast');
+      t.classList.remove('hidden');
+      t.innerText = '🎉 ส่ง ' + emoji + ' "' + text + '" ให้ ณิชา สำเร็จ! (+5 แต้มมิตรภาพ)';
+      setTimeout(() => {
+        t.innerText = '🦊 ณิชา ส่งกลับมา: "ขอบคุณนะ! มาลุยด่านต่อไปด้วยกันเลย ✨"';
+      }, 1200);
+    }
+  </script>
+</body>
+</html>

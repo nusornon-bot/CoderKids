@@ -1,0 +1,33 @@
+{
+  "id": "/",
+  "name": "Coder Kids Thailand - สื่อการเรียนรู้วิทยาการคำนวณ ว 4.2",
+  "short_name": "CoderKids",
+  "description": "แพลตฟอร์มการเรียนรู้วิทยาการคำนวณระดับประถมศึกษา ป.4 - ป.6 ตามมาตรฐาน สพฐ. / สสวท. ว 4.2",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#4f46e5",
+  "theme_color": "#4f46e5",
+  "categories": ["education", "kids", "productivity"],
+  "icons": [
+    {
+      "src": "/assets/aistudio/image_e7af1854.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/aistudio/image_e7af1854.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/aistudio/image_e7af1854.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

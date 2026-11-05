@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    font-family: 'Prompt', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    color: #1e293b;
+    background-color: #f8fafc;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  html.dark body {
+    color: #f1f5f9;
+    background-color: #0b1120;
+  }
+
+  /* Global Dark Mode smart overrides for consistent contrast across modules */
+  html.dark .bg-white {
+    background-color: #1e293b;
+  }
+
+  html.dark .bg-slate-50 {
+    background-color: #0f172a;
+  }
+
+  html.dark .bg-slate-100 {
+    background-color: #1e293b;
+  }
+
+  html.dark .border-slate-200,
+  html.dark .border-slate-100 {
+    border-color: #334155;
+  }
+
+  html.dark .text-slate-900,
+  html.dark .text-slate-800 {
+    color: #f8fafc;
+  }
+
+  html.dark .text-slate-700,
+  html.dark .text-slate-600 {
+    color: #cbd5e1;
+  }
+
+  html.dark .text-slate-500,
+  html.dark .text-slate-400 {
+    color: #94a3b8;
+  }
+
+  html.dark .bg-indigo-50 {
+    background-color: rgba(99, 102, 241, 0.15);
+  }
+
+  html.dark .bg-amber-50 {
+    background-color: rgba(245, 158, 11, 0.15);
+  }
+
+  html.dark .bg-emerald-50 {
+    background-color: rgba(16, 185, 129, 0.15);
+  }
+
+  html.dark .bg-purple-50 {
+    background-color: rgba(168, 85, 247, 0.15);
+  }
+
+  html.dark .bg-rose-50 {
+    background-color: rgba(244, 63, 94, 0.15);
+  }
+
+  html.dark .hover\:bg-slate-50:hover,
+  html.dark .hover\:bg-slate-100:hover,
+  html.dark .hover\:bg-slate-200:hover {
+    background-color: #334155;
+  }
+
+  /* High Contrast Accessibility Theme */
+  html.high-contrast {
+    filter: contrast(1.18);
+  }
+
+  html.high-contrast button,
+  html.high-contrast a,
+  html.high-contrast input,
+  html.high-contrast select {
+    outline-offset: 2px !important;
+  }
+
+  html.high-contrast .border,
+  html.high-contrast .border-slate-200,
+  html.high-contrast .border-slate-100 {
+    border-color: #475569 !important;
+  }
+
+  html.high-contrast.dark .border,
+  html.high-contrast.dark .border-slate-700,
+  html.high-contrast.dark .border-slate-800 {
+    border-color: #94a3b8 !important;
+  }
+}
+

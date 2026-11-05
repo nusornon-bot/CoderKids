@@ -1,0 +1,8 @@
+{
+  "name": "Coder Kids โปรแกรมเมอร์รุ่นจิ๋ว",
+  "description": "เว็บแอปพลิเคชั่นสื่อการเรียนการสอน: ความปลอดภัยดิจิทัล การคิดเป็นลำดับขั้น ปฏิบัติการ Scratch \u0026 Micro:bit และสะท้อนผลการเรียนรู้",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
