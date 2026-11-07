@@ -16,7 +16,7 @@ const SHEETS = {
   DAILY_JOURNALS: 'DailyJournals',
   QUIZ_RESULTS: 'QuizResults',
   SHOWCASE: 'ShowcaseProjects',
-  LOGIN_LOGS: 'ClassroomLogs',
+  LOGIN_LOGS: 'Logs',
   LEADERBOARD: 'Leaderboard'
 };
 

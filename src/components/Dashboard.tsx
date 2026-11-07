@@ -46,6 +46,7 @@ interface DashboardProps {
   onOpenCertificate: () => void;
   onOpenProfile: () => void;
   profile: UserProfile;
+  profiles?: UserProfile[];
   moduleProgress: {
     safety: boolean;
     thinking: boolean;
@@ -87,6 +88,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenCertificate,
   onOpenProfile,
   profile,
+  profiles = [],
   moduleProgress,
   points,
   isLoggedIn = false,
@@ -503,8 +505,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
                       <span>หมวด: {todayGoal.category}</span>
                       <span aria-hidden="true">·</span>
-                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono tabular-nums">
-                        {todayGoal.completed ? '+20 XP (สำเร็จแล้ว)' : '+20 XP'}
+                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono tabular-nums inline-flex items-center gap-1.5">
+                        <span>+20 XP</span>
+                        {todayGoal.pointsClaimed ? (
+                          <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.2 rounded font-sans font-bold">
+                            รับแต้มแล้ว
+                          </span>
+                        ) : todayGoal.completed ? (
+                          <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.2 rounded font-sans font-bold">
+                            สำเร็จแล้ว
+                          </span>
+                        ) : null}
                       </span>
                     </div>
                   </div>
@@ -1150,41 +1161,45 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </section>
       )}
 
-      {/* ----------------- 7. INSIGHTS & LEADERBOARD BENTO ----------------- */}
+      {/* ----------------- 7. INSIGHTS & LEADERBOARD (FULL WIDTH) ----------------- */}
       {(activeCategory === 'all' || activeCategory === 'curriculum') && (
         <section className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <span className="text-xs font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400">
+              <span className="text-xs font-bold tracking-wider uppercase text-indigo-600 dark:text-indigo-400">
                 Insights &amp; Hall of Fame
               </span>
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
                 สถิติเชิงลึก &amp; ตารางอันดับนักเรียน
               </h2>
             </div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              วิเคราะห์สมรรถนะการเรียนรู้รายบุคคล พร้อมทำเนียบจัดอันดับผู้เรียนห้องเรียนวิทยาการคำนวณ
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-sm">
-              <SkillsRadarChart
-                moduleProgress={moduleProgress}
-                points={points}
-                profile={profile}
-                onNavigate={onNavigate}
-              />
-            </div>
+          {/* 7.1 สถิติเชิงลึก (Skills Radar Chart) - แสดงเต็มพื้นที่ด้านบน */}
+          <div className="w-full rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-sm">
+            <SkillsRadarChart
+              moduleProgress={moduleProgress}
+              points={points}
+              profile={profile}
+              onNavigate={onNavigate}
+            />
+          </div>
 
-            <div className="lg:col-span-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-sm">
-              <Leaderboard
-                initialEntries={INITIAL_LEADERBOARD}
-                currentUserPoints={points}
-                completedModulesCount={completedCount}
-                onOpenCertificate={onOpenCertificate}
-                isAdmin={isAdmin}
-                profile={profile}
-                onNavigate={onNavigate}
-              />
-            </div>
+          {/* 7.2 ตารางอันดับนักเรียน (Leaderboard) - แสดงเต็มพื้นที่ด้านล่าง */}
+          <div className="w-full rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-7 shadow-sm">
+            <Leaderboard
+              initialEntries={[]}
+              currentUserPoints={points}
+              completedModulesCount={completedCount}
+              onOpenCertificate={onOpenCertificate}
+              isAdmin={isAdmin}
+              profile={profile}
+              profiles={profiles}
+              onNavigate={onNavigate}
+            />
           </div>
         </section>
       )}

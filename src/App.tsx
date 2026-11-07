@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header.tsx';
 import { Dashboard } from './components/Dashboard.tsx';
 import { Footer } from './components/Footer.tsx';
@@ -84,9 +84,47 @@ import {
   AchievementBadge,
   PointTransaction,
   TodayLearningGoal,
+  TeacherRecord,
 } from './types/index.ts';
+import {
+  TARGET_SPREADSHEET_ID,
+  fetchTeachersFromGoogleSheet,
+  fetchStudentsFromGoogleSheet,
+  checkIsTeacherAdmin,
+  getAdminProfileData,
+  recordStudentLoginToGoogleSheet,
+  auth,
+  initAuth,
+} from './services/googleSheetsService.ts';
 import { ArrowLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
+
+// Helper: Filter out legacy mock profiles (กวินท์, ณิชารีย์, CK-2569-4102, ฯลฯ)
+const isLegacyMockProfile = (p?: any): boolean => {
+  if (!p) return true;
+  const name = String(p.name || '');
+  const id = String(p.id || '');
+  const studentId = String(p.studentId || '');
+  return (
+    id.startsWith('prof_1') ||
+    id.startsWith('prof_2') ||
+    id.startsWith('prof_3') ||
+    id.startsWith('prof_4') ||
+    id.startsWith('prof_5') ||
+    id.startsWith('prof_6') ||
+    studentId === 'CK-2569-4102' ||
+    studentId === 'CK-2569-4103' ||
+    studentId === 'CK-2569-4104' ||
+    studentId === 'CK-2569-4105' ||
+    studentId === 'CK-2569-4106' ||
+    studentId === 'CK-2569-4107' ||
+    name.includes('กวินท์') ||
+    name.includes('ณิชารีย์') ||
+    name.includes('ธีรภัทร') ||
+    name.includes('พิมพิมาดา') ||
+    name.includes('ชนัญชิดา')
+  );
+};
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -98,12 +136,16 @@ export default function App() {
   const [showcaseSubTab, setShowcaseSubTab] = useState<'gallery' | 'reviews' | 'reflection' | 'dailyJournal'>('gallery');
 
   // Student Profiles State for Multi-Profile Management (เพิ่ม, ลบ, แก้ไข, สลับ)
+  // ลบโปรไฟล์เริ่มต้นของระบบออกทั้งหมด ข้อมูลจะถูกดึงอัตโนมัติจากแท็บ Students ใน Google Sheet
   const [profiles, setProfiles] = useState<UserProfile[]>(() => {
     const saved = localStorage.getItem('coderkids_profiles');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const cleaned = parsed.filter((p) => !isLegacyMockProfile(p));
+          if (cleaned.length > 0) return cleaned;
+        }
       } catch (e) {
         console.error('Error loading profiles:', e);
       }
@@ -111,18 +153,22 @@ export default function App() {
     return DEFAULT_PROFILES_LIST;
   });
 
-  // Current Active Student Profile
+  // Current Active Student Profile: หากยังไม่เข้าสู่ระบบ จะเป็น guest_learner
   const [profile, setProfile] = useState<UserProfile>(() => {
+    const isLogged = localStorage.getItem('coderkids_is_logged_in') === 'true';
+    if (!isLogged) {
+      return DEFAULT_PROFILE;
+    }
     const saved = localStorage.getItem('coderkids_profile');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.name) return parsed;
+        if (parsed && parsed.name && !isLegacyMockProfile(parsed)) return parsed;
       } catch (e) {
         console.error('Error loading active profile:', e);
       }
     }
-    return DEFAULT_PROFILES_LIST[0] || DEFAULT_PROFILE;
+    return DEFAULT_PROFILE;
   });
 
   // Points and Ledger State
@@ -260,11 +306,42 @@ export default function App() {
 
   // Member Login Gate State ("สมาชิกลงชื่อเข้าใช้งาน ก่อนเข้าบทเรียน")
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    // ตรวจสอบความถูกต้อง หากเคยจำลองเป็นโปรไฟล์ระบบเดิม ให้เคลียร์เพื่อความปลอดภัย
+    const savedProf = localStorage.getItem('coderkids_profile');
+    if (savedProf) {
+      try {
+        const p = JSON.parse(savedProf);
+        if (isLegacyMockProfile(p)) {
+          localStorage.removeItem('coderkids_profile');
+          localStorage.removeItem('coderkids_is_logged_in');
+          return false;
+        }
+      } catch {
+        return false;
+      }
+    }
     const saved = localStorage.getItem('coderkids_is_logged_in');
     return saved === 'true';
   });
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [pendingDestinationModule, setPendingDestinationModule] = useState<string | null>(null);
+
+  // Anti-Cheat: บันทึกรายการกิจกรรม/ภารกิจที่รับแต้มไปแล้ว ป้องกันการฟาร์มแต้มซ้ำ
+  const [claimedActivities, setClaimedActivities] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('coderkids_claimed_activities');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('coderkids_claimed_activities', JSON.stringify(claimedActivities));
+  }, [claimedActivities]);
+
+  // Rate Limiting Debounce Map ป้องกันการคลิกรัวสแปมขอแต้ม
+  const lastActionTimestampsRef = useRef<Map<string, number>>(new Map());
 
   // Today's Learning Goal State (เป้าหมายการเรียนรู้วันนี้ ที่ตั้งจาก DailyJournal)
   const [todayGoal, setTodayGoal] = useState<TodayLearningGoal | null>(() => {
@@ -330,20 +407,34 @@ export default function App() {
     });
   };
 
+  // จัดการเป้าหมายการเรียนรู้วันนี้ พร้อมระบบ Anti-Cheat (ป้องกันการคลิกเปิด/ปิดซ้ำๆ เพื่อฟาร์มแต้ม)
   const handleToggleTodayGoal = () => {
     if (!todayGoal) return;
     const newCompleted = !todayGoal.completed;
     const nowTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    const goalUniqueKey = `goal_${todayGoal.id}`;
+    const isAlreadyClaimed = Boolean(todayGoal.pointsClaimed || claimedActivities.includes(goalUniqueKey));
+
     const updated: TodayLearningGoal = {
       ...todayGoal,
       completed: newCompleted,
       completedAt: newCompleted ? nowTime : undefined,
+      pointsClaimed: isAlreadyClaimed || newCompleted,
     };
     setTodayGoal(updated);
 
     if (newCompleted) {
-      addPoints(10, `ทำเป้าหมายการเรียนรู้วันนี้สำเร็จ: "${todayGoal.goal.substring(0, 35)}..."`, 'classroom');
-      confetti({ particleCount: 55, spread: 65, origin: { y: 0.6 } });
+      if (!isAlreadyClaimed) {
+        addPoints(
+          20,
+          `ทำเป้าหมายการเรียนรู้วันนี้สำเร็จ: "${todayGoal.goal.substring(0, 35)}..."`,
+          'classroom',
+          { uniqueKey: goalUniqueKey }
+        );
+        confetti({ particleCount: 55, spread: 65, origin: { y: 0.6 } });
+      } else {
+        soundEffects.play('click');
+      }
     }
   };
 
@@ -356,6 +447,7 @@ export default function App() {
       id: `goal_${Date.now()}`,
       goal: goalText.trim(),
       completed: false,
+      pointsClaimed: false,
       category,
       createdAt: now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
       date: now.toISOString().split('T')[0],
@@ -378,6 +470,13 @@ export default function App() {
 
   // Profile Management Handlers (เพิ่ม, แก้ไข, ลบ, สลับ)
   const handleUpdateProfile = (updated: UserProfile) => {
+    // กฎความปลอดภัย: สมาชิกไม่สามารถแก้ไขข้อมูลสมาชิกคนอื่นได้
+    const isTeacher = checkIsTeacherAdmin(auth.currentUser?.email || profile.contactEmail || '', teachersList).isAdmin;
+    if (!isTeacher && updated.id !== profile.id && updated.studentId !== profile.studentId) {
+      alert('🔒 ปฏิเสธการดำเนินการ: สมาชิกไม่สามารถแก้ไขข้อมูลของสมาชิกคนอื่นได้');
+      return;
+    }
+
     setProfile(updated);
     setProfiles((prev) => {
       const exists = prev.some((p) => p.id === updated.id);
@@ -389,6 +488,12 @@ export default function App() {
   };
 
   const handleAddProfile = (newProfile: UserProfile, makeActive: boolean = true) => {
+    // กฎความปลอดภัย: สมาชิกไม่สามารถเพิ่มข้อมูลสมาชิกคนอื่นในระบบได้
+    const isTeacher = checkIsTeacherAdmin(auth.currentUser?.email || profile.contactEmail || '', teachersList).isAdmin;
+    if (!isTeacher) {
+      alert('🔒 ปฏิเสธการดำเนินการ: สมาชิกไม่สามารถเพิ่มข้อมูลผู้เรียนคนอื่นในระบบได้ (สิทธิ์เฉพาะครู/แอดมิน)');
+      return;
+    }
     setProfiles((prev) => [newProfile, ...prev]);
     if (makeActive) {
       setProfile(newProfile);
@@ -396,6 +501,12 @@ export default function App() {
   };
 
   const handleDeleteProfile = (profileId: string) => {
+    // กฎความปลอดภัย: สมาชิกไม่สามารถลบข้อมูลสมาชิกคนอื่นได้
+    const isTeacher = checkIsTeacherAdmin(auth.currentUser?.email || profile.contactEmail || '', teachersList).isAdmin;
+    if (!isTeacher) {
+      alert('🔒 ปฏิเสธการดำเนินการ: สมาชิกไม่สามารถลบข้อมูลสมาชิกคนอื่นได้ (สิทธิ์เฉพาะครู/แอดมิน)');
+      return;
+    }
     setProfiles((prev) => {
       if (prev.length <= 1) return prev;
       const remaining = prev.filter((p) => p.id !== profileId);
@@ -413,10 +524,10 @@ export default function App() {
     }
   };
 
-  // Lesson Access Gatekeeper ("สมาชิกลงชื่อเข้าใช้งาน ก่อนเข้าบทเรียน")
+  // Lesson Access Gatekeeper ("สมาชิกลงชื่อเข้าใช้งาน ก่อนเข้าบทเรียน & จัดการโปรไฟล์")
   const handleNavigate = (moduleKey: string, subSection?: string) => {
-    const lessonModules = ['safety', 'thinking', 'codingLab', 'showcase', 'classroom'];
-    if (!isLoggedIn && lessonModules.includes(moduleKey)) {
+    const protectedModules = ['safety', 'thinking', 'codingLab', 'showcase', 'classroom', 'profileManage'];
+    if (!isLoggedIn && protectedModules.includes(moduleKey)) {
       setPendingDestinationModule(moduleKey);
       setIsLoginModalOpen(true);
       return;
@@ -439,6 +550,17 @@ export default function App() {
     }
     setActiveTab(moduleKey);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // บันทึกประวัติการเข้าเรียนรู้ลงในชีตแท็บ Logs อัตโนมัติ
+    if (isLoggedIn && profile && profile.id !== 'guest_learner') {
+      recordStudentLoginToGoogleSheet(
+        TARGET_SPREADSHEET_ID,
+        profile,
+        auth.currentUser?.email || profile.contactEmail || '',
+        `เข้าเรียนรู้โมดูล: ${moduleKey}${subSection ? ` (${subSection})` : ''}`,
+        moduleKey
+      ).catch(() => {});
+    }
   };
 
   const handleLoginSuccess = (selectedProfile: UserProfile, googleUser?: any) => {
@@ -459,6 +581,8 @@ export default function App() {
 
   const handleLogout = () => {
     setIsLoggedIn(false);
+    localStorage.removeItem('coderkids_is_logged_in');
+    setProfile(DEFAULT_PROFILES_LIST[0] || DEFAULT_PROFILE);
     setActiveTab('dashboard');
   };
 
@@ -490,8 +614,33 @@ export default function App() {
     localStorage.setItem('coderkids_reviews', JSON.stringify(reviews));
   }, [reviews]);
 
-  // Points and Ledger Management
-  const addPoints = (amount: number, reason: string = 'ผ่านภารกิจการเรียนรู้', category: 'safety' | 'thinking' | 'coding' | 'showcase' | 'classroom' = 'classroom') => {
+  // Points and Ledger Management (พร้อมระบบ Anti-Cheat ป้องกันการกดแต้มซ้ำ / ฟาร์มแต้ม)
+  const addPoints = (
+    amount: number,
+    reason: string = 'ผ่านภารกิจการเรียนรู้',
+    category: 'safety' | 'thinking' | 'coding' | 'showcase' | 'classroom' = 'classroom',
+    options?: { uniqueKey?: string; cooldownMs?: number }
+  ): boolean => {
+    // 1. Anti-Cheat: ตรวจสอบคีย์เฉพาะ ไม่ให้เคลมซ้ำ เช่น เป้าหมายวันนี้ หรือการกดถูกใจเดิม
+    if (options?.uniqueKey) {
+      if (claimedActivities.includes(options.uniqueKey)) {
+        console.warn(`[Anti-Cheat] กิจกรรม "${options.uniqueKey}" ได้รับแต้มไปแล้ว ไม่สามารถรับซ้ำได้`);
+        return false;
+      }
+      setClaimedActivities((prev) => [...prev, options.uniqueKey!]);
+    }
+
+    // 2. Anti-Cheat: ป้องกันการกดรัว/สแปม (Rate Limiting / Debounce Cooldown)
+    const now = Date.now();
+    const cooldown = options?.cooldownMs ?? 2000;
+    const actionKey = `${category}_${reason}`;
+    const lastTime = lastActionTimestampsRef.current.get(actionKey) || 0;
+    if (now - lastTime < cooldown) {
+      console.warn(`[Anti-Cheat] ป้องกันการกดซ้ำ (Rate limit cooldown): ${reason}`);
+      return false;
+    }
+    lastActionTimestampsRef.current.set(actionKey, now);
+
     const newTotal = points + amount;
     setPoints(newTotal);
     soundEffects.playSuccess();
@@ -531,6 +680,8 @@ export default function App() {
         });
       }, 500);
     }
+
+    return true;
   };
 
   const spendPoints = (amount: number, description: string, rewardId: string): boolean => {
@@ -575,7 +726,12 @@ export default function App() {
 
       // Trigger ConfettiCelebration particle animation whenever student completes a module or milestone
       if (!isAlreadyDone) {
-        addPoints(50, `สำเร็จการเรียนรู้โมดูล: ${moduleKey}`, moduleKey === 'codingLab' ? 'coding' : moduleKey);
+        addPoints(
+          50,
+          `สำเร็จการเรียนรู้โมดูล: ${moduleKey}`,
+          moduleKey === 'codingLab' ? 'coding' : moduleKey,
+          { uniqueKey: `module_complete_${moduleKey}` }
+        );
 
         const moduleMeta: Record<string, { title: string; subtitle: string; emoji: string; next?: string; nextTitle?: string }> = {
           safety: {
@@ -650,7 +806,9 @@ export default function App() {
       setProjects((prev) =>
         prev.map((p) => (p.id === projId ? { ...p, likes: p.likes + 1 } : p))
       );
-      addPoints(5, 'กดถูกใจและให้กำลังใจผลงานเพื่อน', 'showcase');
+      addPoints(5, 'กดถูกใจและให้กำลังใจผลงานเพื่อน', 'showcase', {
+        uniqueKey: `like_project_${projId}`,
+      });
     }
   };
 
@@ -703,15 +861,142 @@ export default function App() {
     setProfile((prev) => ({ ...prev, selectedTitle: title }));
   };
 
+  // Teachers list loaded from Google Sheet Tab "Teachers"
+  const [teachersList, setTeachersList] = useState<TeacherRecord[]>([]);
+
+  // Refresh teachers list from Google Sheet Tab "Teachers"
+  const refreshTeachersList = async () => {
+    try {
+      const list = await fetchTeachersFromGoogleSheet(TARGET_SPREADSHEET_ID);
+      setTeachersList(list);
+      return list;
+    } catch (e) {
+      console.warn('Could not load teachers from Google Sheet:', e);
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    // 1. ดึงข้อมูลสมาชิกอัตโนมัติทุกครั้งที่โหลดแอป จาก Google Sheet (แท็บ Students ID: 1tWcZ4OaGZKOcX1PEvVNadyf9mM_igaKcF3ZV_b3L7Ng)
+    fetchStudentsFromGoogleSheet(TARGET_SPREADSHEET_ID)
+      .then(({ students }) => {
+        if (students && students.length > 0) {
+          console.log(`[Google Sheets] ดึงข้อมูลสมาชิกอัตโนมัติเรียบร้อย: ${students.length} รายการ`);
+          setProfiles((prev) => {
+            const adminProfiles = prev.filter((p) => p.role === 'admin' || p.id.startsWith('admin_'));
+            return [...adminProfiles, ...students];
+          });
+
+          // อัปเดตโปรไฟล์ปัจจุบันถ้าเป็นผู้เรียน
+          setProfile((curr) => {
+            if (curr.role !== 'admin') {
+              const matched = students.find(
+                (s) => s.studentId === curr.studentId || s.name === curr.name || s.id === curr.id
+              );
+              return matched || curr;
+            }
+            return curr;
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn('Auto-fetch students on load error:', err);
+      });
+
+    // 2. ดึงข้อมูลครูและตรวจสอบสิทธิ์แอดมินจากแท็บ Teachers
+    refreshTeachersList().then((list) => {
+      if (isLoggedIn) {
+        const currentEmail = auth.currentUser?.email || profile.contactEmail || '';
+        const check = checkIsTeacherAdmin(currentEmail, list);
+        if (check.isAdmin) {
+          // เมื่อแอดมินเข้าสู่ระบบ ต้องแสดงโปรไฟล์ของแอดมิน
+          const adminProf = getAdminProfileData(currentEmail, check.matchedTeacher?.name);
+          setProfile(adminProf);
+          setProfiles((prev) => {
+            const exists = prev.some((p) => p.id === adminProf.id);
+            return exists ? prev : [adminProf, ...prev];
+          });
+        } else {
+          // บังคับสิทธิ์ผู้เรียนหากไม่มีรายชื่อในแท็บ Teachers
+          setProfile((prev) => (prev.role === 'admin' ? { ...prev, role: 'student' } : prev));
+        }
+      }
+    });
+
+    // 3. ติดตามสถานะ Firebase Auth
+    const unsub = initAuth((user) => {
+      if (user?.email) {
+        const check = checkIsTeacherAdmin(user.email, teachersList);
+        if (check.isAdmin) {
+          // แสดงโปรไฟล์ของแอดมิน
+          const adminProf = getAdminProfileData(user.email, check.matchedTeacher?.name || user.displayName || undefined);
+          setProfile(adminProf);
+          setProfiles((prev) => {
+            const exists = prev.some((p) => p.id === adminProf.id);
+            return exists ? prev : [adminProf, ...prev];
+          });
+        } else {
+          setProfile((prev) => ({ ...prev, contactEmail: user.email || undefined, role: 'student' }));
+        }
+      }
+    });
+    return () => unsub();
+  }, []);
+
   const completedCount = Object.values(moduleProgress).filter(Boolean).length;
-  const isAdmin = profile.role === 'admin';
+  // ผู้ใช้ต้อง "เข้าสู่ระบบ (isLoggedIn === true)" ก่อนเท่านั้น จึงจะตรวจสอบสิทธิ์แอดมินได้
+  // ผู้ใช้งานทั่วไปที่ยังไม่เข้าสู่ระบบ จะไม่มีสิทธิ์แอดมินโดยเด็ดขาด (isAdmin = false)
+  const verifiedUserEmail = isLoggedIn ? (auth.currentUser?.email || profile.contactEmail || '') : '';
+  const teacherCheck = checkIsTeacherAdmin(verifiedUserEmail, teachersList);
+  const isTeacherAuthorized = Boolean(isLoggedIn && teacherCheck.isAdmin);
+  const isAdmin = Boolean(isLoggedIn && isTeacherAuthorized && profile.role !== 'student');
 
   const handleToggleAdmin = (newAdminState: boolean) => {
-    const updated: UserProfile = {
-      ...profile,
-      role: newAdminState ? 'admin' : 'student',
-    };
-    handleUpdateProfile(updated);
+    const currentEmail = auth.currentUser?.email || profile.contactEmail || '';
+    const check = checkIsTeacherAdmin(currentEmail, teachersList);
+
+    // Enforcement: ผู้เรียนไม่สามารถเปลี่ยนสถานะจาก "สมาชิก" เป็น "แอดมิน" ได้
+    if (newAdminState && !check.isAdmin) {
+      alert(
+        '🔒 ปฏิเสธการเปลี่ยนสถานะ: ผู้เรียนไม่สามารถเปลี่ยนสถานะจาก "สมาชิก" เป็น "แอดมิน" ได้\n\n' +
+        'สิทธิ์ผู้ดูแลระบบสงวนไว้เฉพาะคุณครูและแอดมินที่มีรายชื่อระบุในแท็บ Teachers บน Google Sheet (ID: 1tWcZ4OaGZKOcX1PEvVNadyf9mM_igaKcF3ZV_b3L7Ng) เท่านั้น'
+      );
+      return;
+    }
+
+    if (newAdminState) {
+      // สลับสู่โหมดแอดมิน -> แสดงโปรไฟล์แอดมิน
+      const adminProf = getAdminProfileData(currentEmail, check.matchedTeacher?.name);
+      setProfile(adminProf);
+      setProfiles((prev) => {
+        const exists = prev.some((p) => p.id === adminProf.id);
+        return exists ? prev : [adminProf, ...prev];
+      });
+    } else {
+      // สลับสู่มุมมองผู้เรียน -> สลับไปที่โปรไฟล์ผู้เรียน
+      const studentProf = profiles.find((p) => p.role !== 'admin' && !p.id.startsWith('admin_')) || profiles[0];
+      if (studentProf) {
+        setProfile({ ...studentProf, role: 'student' });
+      } else {
+        setProfile((prev) => ({ ...prev, role: 'student' }));
+      }
+    }
+  };
+
+  const handleSyncStudentsFromSheet = (sheetStudents: UserProfile[]) => {
+    if (sheetStudents && sheetStudents.length > 0) {
+      setProfiles((prev) => {
+        const existingIds = new Set(sheetStudents.map((s) => s.studentId || s.id));
+        const kept = prev.filter((p) => !existingIds.has(p.studentId || p.id));
+        const merged = [...sheetStudents, ...kept];
+        try {
+          localStorage.setItem('coderkids_profiles', JSON.stringify(merged));
+        } catch (e) {
+          console.warn('Save profiles error:', e);
+        }
+        return merged;
+      });
+    }
   };
 
   return (
@@ -727,6 +1012,7 @@ export default function App() {
         isLoggedIn={isLoggedIn}
         onOpenLogin={() => setIsLoginModalOpen(true)}
         onLogout={handleLogout}
+        isTeacherAuthorized={isTeacherAuthorized}
         isAdmin={isAdmin}
         onToggleAdmin={handleToggleAdmin}
         onOpenAITutor={() => setIsAITutorOpen(true)}
@@ -797,6 +1083,7 @@ export default function App() {
             onOpenCertificate={() => setIsCertificateModalOpen(true)}
             onOpenProfile={() => setIsProfileModalOpen(true)}
             profile={profile}
+            profiles={profiles}
             moduleProgress={moduleProgress}
             points={points}
             isLoggedIn={isLoggedIn}
@@ -846,6 +1133,8 @@ export default function App() {
           <ProfileManagementView
             profile={profile}
             profiles={profiles}
+            isLoggedIn={isLoggedIn}
+            onOpenLogin={() => setIsLoginModalOpen(true)}
             onUpdateProfile={handleUpdateProfile}
             onAddProfile={handleAddProfile}
             onDeleteProfile={handleDeleteProfile}
@@ -855,6 +1144,9 @@ export default function App() {
             badges={badges}
             isAdmin={isAdmin}
             onToggleAdmin={handleToggleAdmin}
+            teachersList={teachersList}
+            onRefreshTeachers={refreshTeachersList}
+            onSyncStudentsFromSheet={handleSyncStudentsFromSheet}
             onOpenGasExport={() => setIsGasExportModalOpen(true)}
           />
         )}

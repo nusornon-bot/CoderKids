@@ -193,6 +193,15 @@ export interface UserProfile {
   enrolledClassroomCode?: string;
 }
 
+export interface TeacherRecord {
+  id?: string;
+  name: string;
+  email: string;
+  updatedAt?: string;
+  role?: 'teacher' | 'admin';
+  school?: string;
+}
+
 export interface AchievementBadge {
   id: string;
   title: string;
@@ -346,6 +355,7 @@ export interface TodayLearningGoal {
   createdAt: string;
   completedAt?: string;
   date: string; // YYYY-MM-DD
+  pointsClaimed?: boolean; // ป้องกันการได้แต้มซ้ำซ้อนจากการกดติ๊กเข้า/ออก
 }
 
 // Buddy System Types

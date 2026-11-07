@@ -44,15 +44,15 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
       <button
         onClick={handleInstallClick}
         title="ติดตั้ง Coder Kids เป็นแอปบนอุปกรณ์ (เล่นออฟไลน์ได้)"
-        className={`group relative inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all duration-200 shadow-sm ${
+        className={`group relative inline-flex items-center gap-1.5 p-2 sm:px-2.5 sm:py-1.5 2xl:px-3.5 text-xs font-bold rounded-xl transition-all duration-200 shadow-sm shrink-0 ${
           variant === 'full'
             ? 'bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white shadow-indigo-500/25 hover:shadow-indigo-500/40'
             : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/30 hover:scale-[1.02]'
         } ${className}`}
       >
         <Download className="w-3.5 h-3.5 transition-transform group-hover:-translate-y-0.5" />
-        <span>ติดตั้งแอป (PWA)</span>
-        <span className="hidden sm:inline-block px-1.5 py-0.2 text-[10px] bg-white/20 rounded-md font-mono">
+        <span className="hidden 2xl:inline">ติดตั้งแอป (PWA)</span>
+        <span className="hidden 2xl:inline-block px-1.5 py-0.2 text-[10px] bg-white/20 rounded-md font-mono">
           Offline
         </span>
       </button>

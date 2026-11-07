@@ -1,12 +1,20 @@
 import React, { useState } from 'react';
-import { UserProfile } from '../types/index.ts';
+import { UserProfile, TeacherRecord } from '../types/index.ts';
 import { AVATAR_OPTIONS } from '../data/learningData.ts';
 import { CategorizedAvatarSelector, AvatarSelectionPayload } from './CategorizedAvatarSelector.tsx';
 import {
   TARGET_SPREADSHEET_ID,
+  STUDENTS_SHEET_TITLE,
+  TEACHERS_SHEET_TITLE,
+  SCHOOL_DOMAIN,
   googleSignIn,
+  googleLogout,
+  isAllowedSchoolUser,
   recordStudentLoginToGoogleSheet,
   saveProfileToGoogleSheet,
+  fetchTeachersFromGoogleSheet,
+  checkIsTeacherAdmin,
+  getAdminProfileData,
 } from '../services/googleSheetsService.ts';
 import {
   LogIn,
@@ -102,18 +110,93 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       if (res && res.user) {
         // Link with matching profile or update email
         const userEmail = res.user.email || '';
-        const updated = {
-          ...currentProfile,
-          contactEmail: userEmail,
-          name: currentProfile.name || res.user.displayName || 'นักเรียน Coder Kids',
-        };
 
-        // Record to Google Sheet ID: 1tWcZ4OaGZKOcX1PEvVNadyf9mM_igaKcF3ZV_b3L7Ng
+        // Fetch teachers list from Google Sheet to check permissions & domain
+        let isTeacherAdmin = false;
+        let matchedTeacherName: string | undefined;
+        let teachers: TeacherRecord[] = [];
         try {
-          await recordStudentLoginToGoogleSheet(TARGET_SPREADSHEET_ID, updated, userEmail);
-          await saveProfileToGoogleSheet(TARGET_SPREADSHEET_ID, updated, 70, 2, [], userEmail);
+          teachers = await fetchTeachersFromGoogleSheet(TARGET_SPREADSHEET_ID);
+          const teacherCheck = checkIsTeacherAdmin(userEmail, teachers);
+          isTeacherAdmin = teacherCheck.isAdmin;
+          matchedTeacherName = teacherCheck.matchedTeacher?.name;
+        } catch (tErr) {
+          console.warn('Teacher check error:', tErr);
+        }
+
+        // ตรวจสอบการจำกัดโดเมน anubalnara.ac.th สำหรับผู้เรียน
+        const domainCheck = isAllowedSchoolUser(userEmail, teachers);
+        if (!domainCheck.isAllowed) {
+          await googleLogout();
+          setErrorMsg(
+            `⚠️ การเข้าสู่ระบบถูกปฏิเสธ: บัญชีกูเกิล "${userEmail}" ไม่ได้อยู่ในโดเมนโรงเรียน @${SCHOOL_DOMAIN} หรือรายชื่อคุณครูผู้ดูแลระบบ กรุณาใช้บัญชีอีเมลของโรงเรียน (@${SCHOOL_DOMAIN}) ในการเข้าใช้งาน`
+          );
+          setIsLoading(false);
+          return;
+        }
+
+        const emailPrefix = userEmail.split('@')[0];
+        // จับคู่นักเรียนที่มีอยู่เดิมในแท็บ Students จาก Google Sheet
+        const matchedStudent = profiles.find(
+          (p) =>
+            p.contactEmail?.toLowerCase() === userEmail.toLowerCase() ||
+            p.studentId === emailPrefix ||
+            p.studentId?.replace(/\D/g, '') === emailPrefix.replace(/\D/g, '') ||
+            (res.user.displayName && p.name && (p.name.includes(res.user.displayName) || res.user.displayName.includes(p.name)))
+        );
+
+        let updated: UserProfile;
+        if (isTeacherAdmin) {
+          // เมื่อแอดมินเข้าสู่ระบบ แสดงโปรไฟล์ของแอดมิน
+          updated = getAdminProfileData(userEmail, matchedTeacherName || res.user.displayName || undefined);
+        } else if (matchedStudent) {
+          // เชื่อมโยงกับโปรไฟล์นักเรียนที่มีอยู่ในแท็บ Students
+          updated = {
+            ...matchedStudent,
+            contactEmail: userEmail,
+            role: 'student',
+          };
+        } else {
+          // นักเรียนใหม่โรงเรียนอนุบาลนราธิวาส
+          const isNumericId = /^\d+$/.test(emailPrefix);
+          updated = {
+            ...currentProfile,
+            id: `student_${emailPrefix}`,
+            studentId: isNumericId ? emailPrefix : `CK-${emailPrefix}`,
+            name: res.user.displayName || `นักเรียน (${emailPrefix})`,
+            nickname: res.user.displayName?.split(' ')[0] || emailPrefix,
+            school: 'โรงเรียนอนุบาลนราธิวาส',
+            grade: currentProfile.grade && currentProfile.grade !== '-' ? currentProfile.grade : 'ประถมศึกษาปีที่ 4/1',
+            bio: 'พร้อมเริ่มต้นเรียนรู้วิทยาการคำนวณและสะสมแต้มผลงาน',
+            motto: 'เขียนโค้ดวันละนิด จิตแจ่มใส บั๊กหายวับ!',
+            avatarId: 'avatar_cat',
+            avatarEmoji: '🐱',
+            themeColor: 'indigo',
+            codingLevel: 'Intermediate',
+            techInterests: ['Scratch Game', 'Micro:bit IoT', 'Cyber Security'],
+            selectedTitle: 'นักประดิษฐ์รุ่นเยาว์ (Junior Innovator)',
+            contactEmail: userEmail,
+            role: 'student',
+            joinedDate: new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }),
+            streakDays: 1,
+            unlockedRewardIds: ['title_junior'],
+          };
+        }
+
+        // Record to Google Sheet TAB "Logs" & "Students" (ID: 1tWcZ4OaGZKOcX1PEvVNadyf9mM_igaKcF3ZV_b3L7Ng)
+        try {
+          await recordStudentLoginToGoogleSheet(
+            TARGET_SPREADSHEET_ID,
+            updated,
+            userEmail,
+            isTeacherAdmin ? 'แอดมิน/ครู เข้าสู่ระบบห้องเรียน' : 'ลงชื่อเข้าใช้งานห้องเรียน Coder Kids',
+            getModuleName(pendingDestinationModule)
+          );
+          if (!isTeacherAdmin) {
+            await saveProfileToGoogleSheet(TARGET_SPREADSHEET_ID, updated, 70, 2, [], userEmail).catch(() => {});
+          }
         } catch (e) {
-          console.warn('Google Sheet auto-save:', e);
+          console.warn('Google Sheet auto-save on Google login:', e);
         }
 
         onLoginSuccess(updated, res.user);
@@ -161,11 +244,25 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     };
 
     try {
-      // Record to Google Sheet ID: 1tWcZ4OaGZKOcX1PEvVNadyf9mM_igaKcF3ZV_b3L7Ng
+      // Record to Google Sheet ID: 1tWcZ4OaGZKOcX1PEvVNadyf9mM_igaKcF3ZV_b3L7Ng (Students & Logs tabs)
       try {
-        await recordStudentLoginToGoogleSheet(TARGET_SPREADSHEET_ID, newStudentProfile);
+        await recordStudentLoginToGoogleSheet(
+          TARGET_SPREADSHEET_ID,
+          newStudentProfile,
+          '',
+          'ลงทะเบียนผู้เรียนใหม่เข้าห้องเรียน',
+          getModuleName(pendingDestinationModule)
+        );
+        await saveProfileToGoogleSheet(
+          TARGET_SPREADSHEET_ID,
+          newStudentProfile,
+          50,
+          1,
+          [],
+          ''
+        );
       } catch (e) {
-        console.warn('Google Sheet auto-save:', e);
+        console.warn('Google Sheet auto-save to Students/Logs:', e);
       }
 
       onLoginSuccess(newStudentProfile);
@@ -370,31 +467,31 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </form>
         )}
 
-        {/* TAB 2: Google OAuth Login */}
+        {/* TAB 2: Google OAuth Login (จำกัดโดเมน @anubalnara.ac.th) */}
         {activeTab === 'google' && (
           <div className="space-y-5 text-center py-2">
-            <div className="w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto text-2xl shadow-inner">
+            <div className="w-16 h-16 rounded-3xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto text-2xl shadow-inner">
               <FileSpreadsheet className="w-8 h-8" />
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold">
+                <span>🏫 เฉพาะบัญชีโดเมน @{SCHOOL_DOMAIN}</span>
+              </div>
+
               <h3 className="text-base font-bold text-slate-900">
-                ลงชื่อเข้าใช้ด้วยบัญชี Google ของคุณ
+                ลงชื่อเข้าใช้ด้วยบัญชี Google ของโรงเรียน
               </h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-                ระบบจะซิงก์โปรไฟล์ คะแนน และผลงานเข้าสู่ฐานข้อมูลคลาวด์โรงเรียนอย่างปลอดภัย
+                ระบบจำกัดการเข้าใช้งานเฉพาะนักเรียนและคุณครูโรงเรียนอนุบาลนราธิวาสที่มีบัญชีอีเมล 
+                <strong className="text-indigo-600 font-mono"> @{SCHOOL_DOMAIN}</strong> เท่านั้น
               </p>
-              {isAdmin && (
-                <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono font-bold text-xs max-w-md mx-auto select-all">
-                  Google Sheet ID (Admin): {TARGET_SPREADSHEET_ID}
-                </div>
-              )}
             </div>
 
             <button
               onClick={handleGoogleLogin}
               disabled={isLoading}
-              className="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-700 font-semibold border border-slate-300 rounded-2xl text-xs sm:text-sm shadow-sm transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50"
+              className="w-full py-3.5 px-4 bg-white hover:bg-slate-50 text-slate-800 font-bold border-2 border-slate-200 hover:border-indigo-400 rounded-2xl text-xs sm:text-sm shadow-sm transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 cursor-pointer"
             >
               <svg className="w-5 h-5" viewBox="0 0 48 48">
                 <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
@@ -402,7 +499,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
                 <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
               </svg>
-              <span>{isLoading ? 'กำลังเชื่อมต่อ Google...' : 'ลงชื่อเข้าใช้ด้วย Google'}</span>
+              <span>{isLoading ? 'กำลังเชื่อมต่อ Google...' : `เข้าสู่ระบบด้วย @${SCHOOL_DOMAIN}`}</span>
             </button>
           </div>
         )}

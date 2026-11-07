@@ -140,6 +140,53 @@ ${studentContext ? `\nข้อมูลบริบทผู้เรียน�
   }
 });
 
+// ------------------ CLASSROOM ACCESS LOGS API ------------------
+interface ClassroomAccessLog {
+  timestamp: string;
+  studentName: string;
+  grade: string;
+  school: string;
+  avatar: string;
+  action: string;
+  note: string;
+  streak: string;
+  activeModule: string;
+  email: string;
+}
+
+const classroomAccessLogs: ClassroomAccessLog[] = [];
+
+app.post('/api/logs/record', (req, res) => {
+  try {
+    const log = req.body;
+    if (log && log.studentName) {
+      const nowThai = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Bangkok' }).replace('T', ' ');
+      classroomAccessLogs.unshift({
+        timestamp: log.timestamp || nowThai,
+        studentName: log.studentName,
+        grade: log.grade || 'ป.4/1',
+        school: log.school || 'โรงเรียนอนุบาลนราธิวาส',
+        avatar: log.avatar || '🐱',
+        action: log.action || 'เข้าใช้งานห้องเรียน Coder Kids',
+        note: log.note || 'บันทึกการเข้าเรียนอัตโนมัติ',
+        streak: log.streak || 'Streak 1 วัน',
+        activeModule: log.activeModule || 'dashboard',
+        email: log.email || '',
+      });
+      if (classroomAccessLogs.length > 500) classroomAccessLogs.length = 500;
+      console.log(`[Log Recorded] ${log.studentName} (${log.email || '-'}): ${log.action}`);
+    }
+    return res.json({ success: true, totalLogs: classroomAccessLogs.length });
+  } catch (err: any) {
+    console.error('Record log error:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get('/api/logs/list', (_req, res) => {
+  return res.json({ success: true, logs: classroomAccessLogs });
+});
+
 // ------------------ STATIC / VITE MIDDLEWARE ------------------
 async function startServer() {
   if (process.env.NODE_ENV === 'production') {

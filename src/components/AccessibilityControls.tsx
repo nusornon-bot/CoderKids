@@ -130,7 +130,7 @@ export const AccessibilityControls: React.FC<AccessibilityControlsProps> = ({
         aria-label="การเข้าถึงและการมองเห็น"
       >
         <Sliders className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-        <span className="hidden md:inline">การเข้าถึง</span>
+        <span className="hidden 2xl:inline">การเข้าถึง</span>
       </button>
 
       {/* Dropdown Popover */}

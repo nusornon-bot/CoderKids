@@ -162,29 +162,36 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
   // ------------------ DYNAMIC DATA MERGING ------------------
   // Compile all entries from initial mock entries + current user + profiles list
   const allEntries: LeaderboardEntry[] = useMemo(() => {
-    // Current user's entry
-    const userEntry: LeaderboardEntry = {
-      id: profile.id || 'current_user',
-      studentName: profile.name || 'คุณ (ผู้เรียนปัจจุบัน)',
-      nickname: profile.nickname || 'คุณ',
-      studentId: profile.studentId || 'CK-2569-4102',
-      avatarColor: 'bg-indigo-600',
-      avatarEmoji: profile.avatarEmoji || '🐱',
-      grade: profile.grade || 'ประถมศึกษาปีที่ 4/1',
-      school: profile.school || 'โรงเรียนอนุบาลนราธิวาส',
-      classroomCode: profile.enrolledClassroomCode || 'COD-2026',
-      badgeTitle:
-        profile.selectedTitle ||
-        (completedModulesCount >= 3 ? 'ระดับผู้เชี่ยวชาญ (Master)' : 'กำลังพัฒนาฝีมือ (Rising Star)'),
-      points: currentUserPoints,
-      completedModules: completedModulesCount,
-      streakDays: profile.streakDays || 1,
-      isCurrentUser: true,
-    };
+    // Current user's entry (Only include if user is a student, not admin or guest)
+    const isCurrentStudent =
+      profile.role !== 'admin' &&
+      !profile.id.startsWith('admin_') &&
+      profile.id !== 'guest_learner';
 
-    // Profiles from multi-profile management (if not current user)
+    const userEntry: LeaderboardEntry | null = isCurrentStudent
+      ? {
+          id: profile.id || 'current_user',
+          studentName: profile.name || 'คุณ (ผู้เรียนปัจจุบัน)',
+          nickname: profile.nickname || 'คุณ',
+          studentId: profile.studentId || 'CK-2569-4102',
+          avatarColor: 'bg-indigo-600',
+          avatarEmoji: profile.avatarEmoji || '🐱',
+          grade: profile.grade || 'ประถมศึกษาปีที่ 4/1',
+          school: profile.school || 'โรงเรียนอนุบาลนราธิวาส',
+          classroomCode: profile.enrolledClassroomCode || 'COD-2026',
+          badgeTitle:
+            profile.selectedTitle ||
+            (completedModulesCount >= 3 ? 'ระดับผู้เชี่ยวชาญ (Master)' : 'กำลังพัฒนาฝีมือ (Rising Star)'),
+          points: currentUserPoints,
+          completedModules: completedModulesCount,
+          streakDays: profile.streakDays || 1,
+          isCurrentUser: true,
+        }
+      : null;
+
+    // Profiles from multi-profile management (only real students, exclude admins)
     const extraProfiles: LeaderboardEntry[] = profiles
-      .filter((p) => p.id !== profile.id)
+      .filter((p) => p.id !== profile.id && p.role !== 'admin' && !p.id.startsWith('admin_') && p.id !== 'guest_learner')
       .map((p, idx) => ({
         id: p.id,
         studentName: p.name,
@@ -206,7 +213,9 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
     const mergedMap = new Map<string, LeaderboardEntry>();
     initialEntries.forEach((e) => mergedMap.set(e.id, { ...e }));
     extraProfiles.forEach((e) => mergedMap.set(e.id, e));
-    mergedMap.set(userEntry.id, userEntry);
+    if (userEntry) {
+      mergedMap.set(userEntry.id, userEntry);
+    }
 
     const list = Array.from(mergedMap.values());
 
@@ -751,7 +760,8 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
       </div>
 
       {/* 4. Top 3 Visual Podium (แท่นเกียรติยศ 3 อันดับแรก) */}
-      <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+      {top1 && (
+        <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
         <div className="text-center max-w-md mx-auto mb-6">
           <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">
             <Crown className="w-4 h-4 text-amber-500" />
@@ -924,92 +934,95 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
           </div>
         </div>
       </div>
+      )}
 
       {/* 5. Current User Sticky Position Card */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-indigo-50/90 border border-indigo-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
-        <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-2xl bg-indigo-600 text-white font-bold flex items-center justify-center text-base shadow-sm shrink-0">
-            {userRank !== null ? `#${userRank}` : '⭐'}
+      {userRank !== null && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-indigo-50/90 border border-indigo-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-indigo-600 text-white font-bold flex items-center justify-center text-base shadow-sm shrink-0">
+              #{userRank}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-indigo-950">
+                  สถานะของคุณ: {profile.name} {profile.nickname ? `(${profile.nickname})` : ''}
+                </span>
+                <span className="text-xs text-indigo-700 font-semibold bg-white/70 px-2 py-0.5 rounded-full border border-indigo-200">
+                  อันดับที่ {userRank}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-indigo-800 mt-0.5">
+                <span className="font-mono font-bold">{currentUserPoints} แต้ม</span>
+                <span aria-hidden="true">·</span>
+                <span>รหัส: {profile.studentId || 'CK-2569-4102'}</span>
+                <span aria-hidden="true">·</span>
+                <span>{profile.grade || 'ประถมศึกษาปีที่ 4/1'}</span>
+                <span aria-hidden="true">·</span>
+                <span>{profile.school || 'โรงเรียนอนุบาลนราธิวาส'}</span>
+              </div>
+
+              {/* Current user strongest skill badge */}
+              {(() => {
+                const myEntry = filteredList.find((e) => e.isCurrentUser) || {
+                  id: profile.id,
+                  studentName: profile.name,
+                  points: currentUserPoints,
+                  grade: profile.grade || 'ป.4/1',
+                  school: profile.school || '',
+                  badgeTitle: '',
+                  completedModules: completedModulesCount,
+                  avatarColor: 'bg-indigo-600',
+                };
+                const mySkills = computeStudentSkills(myEntry as any, true, completedModulesCount, currentUserPoints);
+                return (
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 text-xs font-bold text-indigo-900 dark:text-indigo-200 shadow-xs">
+                      <span>🌟 ทักษะเด่นที่สุด:</span>
+                      <span>{mySkills.strongest.emoji}</span>
+                      <span>{mySkills.strongest.title}</span>
+                      <span className="font-mono text-indigo-600 dark:text-indigo-400 font-black">({mySkills.strongest.score}%)</span>
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        soundEffects.play('click');
+                        setSelectedStudentForRadar(myEntry as any);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+                    >
+                      <Radar className="w-3.5 h-3.5" />
+                      <span>ดูกราฟเรดาร์ทักษะของคุณ</span>
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-indigo-950">
-                สถานะของคุณ: {profile.name} {profile.nickname ? `(${profile.nickname})` : ''}
-              </span>
-              <span className="text-xs text-indigo-700 font-semibold bg-white/70 px-2 py-0.5 rounded-full border border-indigo-200">
-                {userRank !== null ? `อันดับที่ ${userRank}` : 'ยังไม่ติดอันดับ'}
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 text-xs text-indigo-800 mt-0.5">
-              <span className="font-mono font-bold">{currentUserPoints} แต้ม</span>
-              <span aria-hidden="true">·</span>
-              <span>รหัส: {profile.studentId || 'CK-2569-4102'}</span>
-              <span aria-hidden="true">·</span>
-              <span>{profile.grade || 'ประถมศึกษาปีที่ 4/1'}</span>
-              <span aria-hidden="true">·</span>
-              <span>{profile.school || 'โรงเรียนอนุบาลนราธิวาส'}</span>
-            </div>
 
-            {/* Current user strongest skill badge */}
-            {(() => {
-              const myEntry = filteredList.find((e) => e.isCurrentUser) || {
-                id: profile.id,
-                studentName: profile.name,
-                points: currentUserPoints,
-                grade: profile.grade || 'ป.4/1',
-                school: profile.school || '',
-                badgeTitle: '',
-                completedModules: completedModulesCount,
-                avatarColor: 'bg-indigo-600',
-              };
-              const mySkills = computeStudentSkills(myEntry as any, true, completedModulesCount, currentUserPoints);
-              return (
-                <div className="flex flex-wrap items-center gap-2 mt-2">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 text-xs font-bold text-indigo-900 dark:text-indigo-200 shadow-xs">
-                    <span>🌟 ทักษะเด่นที่สุด:</span>
-                    <span>{mySkills.strongest.emoji}</span>
-                    <span>{mySkills.strongest.title}</span>
-                    <span className="font-mono text-indigo-600 dark:text-indigo-400 font-black">({mySkills.strongest.score}%)</span>
-                  </span>
+          <div className="flex items-center gap-3 self-end sm:self-auto">
+            {userRank !== null && userRank > 3 ? (
+              <div className="text-xs text-indigo-700">
+                ต้องการอีก <strong className="font-mono text-indigo-950 tabular-nums">{(top3?.points || 160) - currentUserPoints + 5}</strong> แต้ม เพื่อขึ้นแท่น Top 3!
+              </div>
+            ) : (
+              <div className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>ยินดีด้วย! คุณอยู่ในกลุ่มผู้นำคะแนนยอดเยี่ยม</span>
+              </div>
+            )}
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      soundEffects.play('click');
-                      setSelectedStudentForRadar(myEntry as any);
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
-                  >
-                    <Radar className="w-3.5 h-3.5" />
-                    <span>ดูกราฟเรดาร์ทักษะของคุณ</span>
-                  </button>
-                </div>
-              );
-            })()}
+            <button
+              onClick={onOpenCertificate}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm"
+            >
+              <Award className="w-3.5 h-3.5" />
+              <span>เกียรติบัตร</span>
+            </button>
           </div>
         </div>
-
-        <div className="flex items-center gap-3 self-end sm:self-auto">
-          {userRank !== null && userRank > 3 ? (
-            <div className="text-xs text-indigo-700">
-              ต้องการอีก <strong className="font-mono text-indigo-950 tabular-nums">{(top3?.points || 160) - currentUserPoints + 5}</strong> แต้ม เพื่อขึ้นแท่น Top 3!
-            </div>
-          ) : (
-            <div className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>ยินดีด้วย! คุณอยู่ในกลุ่มผู้นำคะแนนยอดเยี่ยม</span>
-            </div>
-          )}
-
-          <button
-            onClick={onOpenCertificate}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm"
-          >
-            <Award className="w-3.5 h-3.5" />
-            <span>เกียรติบัตร</span>
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* 6. Comprehensive Ranking Table */}
       <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs space-y-3 p-4 sm:p-6">
@@ -1044,7 +1057,34 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredList.map((entry) => {
+              {filteredList.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-12 px-4 text-center">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                        <GraduationCap className="w-6 h-6" />
+                      </div>
+                      <div className="font-bold text-slate-700 dark:text-slate-200 text-sm">
+                        ยังไม่มีข้อมูลนักเรียนในตารางจัดอันดับ
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md leading-relaxed">
+                        ระบบจะดึงข้อมูลสดจากแท็บ <strong>Students</strong> ใน Google Sheet หรือเมื่อมีการบันทึกโปรไฟล์ผู้เรียนในห้องเรียน
+                      </p>
+                      {isAdmin && onNavigate && (
+                        <button
+                          type="button"
+                          onClick={() => onNavigate('profileManage')}
+                          className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                        >
+                          <Users className="w-3.5 h-3.5" />
+                          <span>ไปที่จัดการโปรไฟล์ (เพิ่ม/ดึงข้อมูลนักเรียน)</span>
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredList.map((entry) => {
                 const isMe = Boolean(entry.isCurrentUser);
                 const isTop1 = entry.rank === 1;
                 const isTop2 = entry.rank === 2;
@@ -1204,7 +1244,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({
                     </td>
                   </tr>
                 );
-              })}
+              }))}
             </tbody>
           </table>
         </div>

@@ -59,6 +59,7 @@ interface HeaderProps {
   isLoggedIn?: boolean;
   onOpenLogin?: () => void;
   onLogout?: () => void;
+  isTeacherAuthorized?: boolean;
   isAdmin?: boolean;
   onToggleAdmin?: (isAdmin: boolean) => void;
   onOpenAITutor?: () => void;
@@ -96,6 +97,7 @@ export const Header: React.FC<HeaderProps> = ({
   isLoggedIn = true,
   onOpenLogin,
   onLogout,
+  isTeacherAuthorized = false,
   isAdmin = false,
   onToggleAdmin,
   onOpenAITutor,
@@ -191,20 +193,20 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors shadow-xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="h-16 flex items-center justify-between gap-3 sm:gap-4" ref={navRef}>
+      <div className="max-w-[1720px] w-full mx-auto px-2 sm:px-4 lg:px-6">
+        <div className="h-16 flex items-center justify-between gap-1.5 sm:gap-2.5" ref={navRef}>
           
           {/* Brand Logo & Name */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <button
               onClick={() => handleSelectTab('dashboard')}
-              className="flex items-center gap-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-xl group p-1 -m-1"
+              className="flex items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-xl group p-1 -m-1 cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 text-white flex items-center justify-center font-black text-xl shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-600 text-white flex items-center justify-center font-black text-lg sm:text-xl shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform shrink-0">
                 C
               </div>
               <div className="flex flex-col">
-                <span className="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white leading-tight">
+                <span className="text-sm sm:text-base font-black tracking-tight text-slate-900 dark:text-white leading-tight">
                   Coder Kids
                 </span>
                 <span className="text-[10px] sm:text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 leading-none">
@@ -215,36 +217,36 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Desktop Categorized Navigation Menus */}
-          <nav className="hidden lg:flex items-center gap-1.5 text-sm font-medium">
+          <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5 text-sm font-medium shrink min-w-0">
             
             {/* 1. หน้าหลัก (Direct Link) */}
             <button
               onClick={() => handleSelectTab('dashboard')}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
                 activeTab === 'dashboard'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              <LayoutDashboard className="w-4 h-4" />
+              <LayoutDashboard className="w-3.5 h-3.5" />
               <span>หน้าหลัก</span>
             </button>
 
             {/* 2. หมวด: บทเรียนหลัก (Dropdown) */}
-            <div className="relative">
+            <div className="relative shrink-0">
               <button
                 onClick={() => setOpenDropdown(openDropdown === 'modules' ? null : 'modules')}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center gap-1 px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   isModulesActive
                     ? 'bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800'
                     : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
                 aria-expanded={openDropdown === 'modules'}
               >
-                <BookOpen className="w-4 h-4 text-indigo-500" />
+                <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
                 <span>บทเรียนหลัก</span>
                 <span className="px-1.5 py-0.2 rounded-md bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-[10px]">4</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 text-slate-400 ${openDropdown === 'modules' ? 'rotate-180 text-indigo-600' : ''}`} />
+                <ChevronDown className={`w-3 h-3 transition-transform duration-200 text-slate-400 ${openDropdown === 'modules' ? 'rotate-180 text-indigo-600' : ''}`} />
               </button>
 
               {/* Modules Dropdown Popover */}
@@ -1071,7 +1073,7 @@ export const Header: React.FC<HeaderProps> = ({
           </nav>
 
           {/* Right Action Utilities Bar */}
-          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             
             {/* PWA Install Button */}
             <PWAInstallButton />
@@ -1080,11 +1082,11 @@ export const Header: React.FC<HeaderProps> = ({
             {onOpenAITutor && (
               <button
                 onClick={onOpenAITutor}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white text-xs font-bold shadow-xs hover:shadow-md transition-all active:scale-95 cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:to-pink-700 text-white text-xs font-bold shadow-xs hover:shadow-md transition-all active:scale-95 cursor-pointer shrink-0"
                 title="ปรึกษาครูพี่โค้ดดิ้ง (AI Tutor ด้วย Gemini API)"
               >
                 <Bot className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">AI Tutor</span>
+                <span className="hidden xl:inline">AI Tutor</span>
               </button>
             )}
 
@@ -1092,33 +1094,45 @@ export const Header: React.FC<HeaderProps> = ({
             {isLoggedIn && (
               <button
                 onClick={() => handleSelectTab('rewards')}
-                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100/90 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100/90 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-xs font-bold transition-all cursor-pointer shadow-xs shrink-0"
                 title="แต้มสะสม Coder Coins (คลิกเพื่อแลกรางวัล)"
               >
                 <Coins className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                 <span className="font-mono tabular-nums">{completedPoints}</span>
-                <span className="hidden sm:inline text-[11px] font-normal text-amber-700 dark:text-amber-400">แต้ม</span>
+                <span className="hidden 2xl:inline text-[11px] font-normal text-amber-700 dark:text-amber-400">แต้ม</span>
               </button>
             )}
 
-            {/* Student Profile Trigger */}
+            {/* Student or Admin Profile Trigger */}
             {isLoggedIn ? (
               <button
                 onClick={onOpenProfile}
-                className="flex items-center gap-1.5 sm:gap-2 p-1 sm:px-2.5 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold transition-all border border-slate-200 dark:border-slate-700 cursor-pointer shadow-xs"
-                title="ดูและแก้ไขโปรไฟล์ผู้เรียน"
+                className={`flex items-center gap-1 sm:gap-1.5 p-1 sm:px-2 sm:py-1.5 rounded-xl text-xs font-semibold transition-all border cursor-pointer shadow-xs shrink-0 ${
+                  isAdmin
+                    ? 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700'
+                }`}
+                title={isAdmin ? "โปรไฟล์ผู้ดูแลระบบ (คลิกเพื่อจัดการโปรไฟล์)" : "ดูและแก้ไขโปรไฟล์ผู้เรียน"}
               >
-                <span className="text-base sm:text-lg leading-none">{profile.avatarEmoji || '🐱'}</span>
-                <span className="hidden md:inline truncate max-w-[85px]">{profile.name.split(' ')[0]}</span>
-                <span className="px-1.5 py-0.5 rounded bg-indigo-600 text-white text-[10px] font-mono font-bold leading-none">
-                  LV.{userLevel}
+                <span className="text-base sm:text-lg leading-none">{profile.avatarEmoji || (isAdmin ? '👨‍🏫' : '🐱')}</span>
+                <span className="hidden xl:inline truncate max-w-[80px]">
+                  {isAdmin ? (profile.nickname || 'ครูนุสรณ์') : (profile.nickname || profile.name.split(' ')[0])}
                 </span>
+                {isAdmin ? (
+                  <span className="px-1.5 py-0.5 rounded bg-amber-500 text-white text-[10px] font-bold leading-none">
+                    ADMIN
+                  </span>
+                ) : (
+                  <span className="px-1.5 py-0.5 rounded bg-indigo-600 text-white text-[10px] font-mono font-bold leading-none">
+                    LV.{userLevel}
+                  </span>
+                )}
               </button>
             ) : (
               onOpenLogin && (
                 <button
                   onClick={onOpenLogin}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
                 >
                   <LogIn className="w-3.5 h-3.5" />
                   <span>เข้าสู่ระบบ</span>
@@ -1126,26 +1140,30 @@ export const Header: React.FC<HeaderProps> = ({
               )
             )}
 
-            {/* Admin Toggle */}
-            {onToggleAdmin && (
+            {/* Admin Toggle & Role Status (เฉพาะคุณครู/แอดมินที่มีสิทธิ์ในแท็บ Teachers เท่านั้น) */}
+            {isLoggedIn && isTeacherAuthorized && onToggleAdmin && (
               <button
                 onClick={() => onToggleAdmin(!isAdmin)}
-                className={`p-2 sm:px-2.5 sm:py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-xs ${
+                className={`p-2 sm:px-2.5 sm:py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-xs shrink-0 ${
                   isAdmin
                     ? 'bg-amber-500 text-white border-amber-600 shadow-amber-500/20'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
-                title={isAdmin ? 'กำลังอยู่ในโหมดผู้ดูแลระบบ (คลิกเพื่อกลับสู่โหมดสมาชิก)' : 'คลิกเพื่อสลับเป็นโหมดผู้ดูแลระบบ (Admin)'}
+                title={
+                  isAdmin
+                    ? 'กำลังอยู่ในโหมดผู้ดูแลระบบ (คลิกเพื่อสลับไปมุมมองนักเรียน)'
+                    : 'สลับไปโหมดผู้ดูแลระบบ (Admin Mode)'
+                }
               >
                 {isAdmin ? (
                   <div className="flex items-center gap-1">
                     <ShieldCheck className="w-3.5 h-3.5" />
-                    <span className="hidden xl:inline text-[11px]">แอดมิน</span>
+                    <span className="hidden 2xl:inline text-[11px]">แอดมิน</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-1">
                     <Shield className="w-3.5 h-3.5 text-slate-400" />
-                    <span className="hidden xl:inline text-[11px]">สมาชิก</span>
+                    <span className="hidden 2xl:inline text-[11px]">มุมมองนักเรียน</span>
                   </div>
                 )}
               </button>
